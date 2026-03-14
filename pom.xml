@@ -10,6 +10,9 @@
     <packaging>pom</packaging>
     <modules>
         <module>common</module>
+        <module>auth-service</module>
+        <module>user-service</module>
+        <module>item-service</module>
     </modules>
 
     <properties>
