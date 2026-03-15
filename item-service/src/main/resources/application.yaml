@@ -4,3 +4,10 @@ server:
 spring:
   application:
     name: item-service
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/campus_trade
+
+jwt:
+  secret: campusTradeSecretKeyCampusTradeSecretKey123456
