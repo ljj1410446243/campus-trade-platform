@@ -1,0 +1,19 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: chat-service
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/campus_trade
+
+logging:
+  level:
+    root: info
+    com.njust.chat: debug
+
+jwt:
+  secret: campusTradeSecretKeyCampusTradeSecretKey123456
+  expiration: 7200000

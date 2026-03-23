@@ -19,7 +19,7 @@ public class Trade {
     /**
      * 成交价
      */
-    private BigDecimal price;
+    private Double price;
 
     /**
      * CREATED / CANCELLED / COMPLETED
@@ -61,11 +61,11 @@ public class Trade {
         this.sellerId = sellerId;
     }
 
-    public BigDecimal getPrice() {
+    public Double getPrice() {
         return price;
     }
 
-    public void setPrice(BigDecimal price) {
+    public void setPrice(Double price) {
         this.price = price;
     }
 

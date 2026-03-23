@@ -9,7 +9,7 @@ public class TradeListResponse {
     private String itemId;
     private String buyerId;
     private String sellerId;
-    private BigDecimal price;
+    private Double price;
     private String status;
     private Date createdAt;
 
@@ -45,11 +45,11 @@ public class TradeListResponse {
         this.sellerId = sellerId;
     }
 
-    public BigDecimal getPrice() {
+    public Double getPrice() {
         return price;
     }
 
-    public void setPrice(BigDecimal price) {
+    public void setPrice(Double price) {
         this.price = price;
     }
 

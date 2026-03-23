@@ -5,7 +5,9 @@ import com.campus.trade.trade.dto.TradeDetailResponse;
 import com.campus.trade.trade.dto.TradeListResponse;
 import com.campus.trade.trade.exception.BusinessException;
 import com.campus.trade.trade.model.Trade;
+import com.campus.trade.trade.model.User;
 import com.campus.trade.trade.repository.TradeRepository;
+import com.campus.trade.trade.repository.UserRepository;
 import com.campus.trade.trade.service.TradeService;
 import org.springframework.stereotype.Service;
 
@@ -16,9 +18,11 @@ import java.util.List;
 public class TradeServiceImpl implements TradeService {
 
     private final TradeRepository tradeRepository;
+    private final UserRepository userRepository;
 
-    public TradeServiceImpl(TradeRepository tradeRepository) {
+    public TradeServiceImpl(TradeRepository tradeRepository, UserRepository userRepository) {
         this.tradeRepository = tradeRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -76,6 +80,17 @@ public class TradeServiceImpl implements TradeService {
         response.setPrice(trade.getPrice());
         response.setStatus(trade.getStatus());
         response.setCreatedAt(trade.getCreatedAt());
+
+        // 补买家昵称
+        userRepository.findById(trade.getBuyerId()).ifPresent(user -> {
+            response.setBuyerNickname(resolveDisplayName(user));
+        });
+
+        // 补卖家昵称
+        userRepository.findById(trade.getSellerId()).ifPresent(user -> {
+            response.setSellerNickname(resolveDisplayName(user));
+        });
+
         return response;
     }
 
@@ -90,9 +105,9 @@ public class TradeServiceImpl implements TradeService {
         response.setCreatedAt(trade.getCreatedAt());
         return response;
     }
+
     @Override
     public void cancelTrade(String userId, String tradeId) {
-
         Trade trade = tradeRepository.findById(tradeId)
                 .orElseThrow(() -> new BusinessException("交易不存在"));
 
@@ -113,7 +128,6 @@ public class TradeServiceImpl implements TradeService {
 
     @Override
     public void completeTrade(String userId, String tradeId) {
-
         Trade trade = tradeRepository.findById(tradeId)
                 .orElseThrow(() -> new BusinessException("交易不存在"));
 
@@ -131,4 +145,10 @@ public class TradeServiceImpl implements TradeService {
         tradeRepository.save(trade);
     }
 
+    private String resolveDisplayName(User user) {
+        if (user.getNickname() != null && !user.getNickname().isBlank()) {
+            return user.getNickname();
+        }
+        return user.getUsername();
+    }
 }
