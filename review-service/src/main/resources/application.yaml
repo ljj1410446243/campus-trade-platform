@@ -1,3 +1,19 @@
+server:
+  port: 8086
+
 spring:
   application:
     name: review-service
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/campus_trade
+
+logging:
+  level:
+    root: info
+    com.campus.trade.review: debug
+
+jwt:
+  secret: your-very-secret-key-your-very-secret-key
+  expiration: 900
