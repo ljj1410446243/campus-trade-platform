@@ -11,4 +11,22 @@ spring:
 
 jwt:
   secret: campusTradeSecretKeyCampusTradeSecretKey123456
-  expiration: 7200
+  access-token-expiration: 900
+
+auth:
+  refresh-token:
+    expiration: 1209600
+  cookie:
+    name: refreshToken
+    path: /auth
+    same-site: Lax
+    secure: false
+    max-age: 1209600
+
+app:
+  cors:
+    allowed-origins:
+      - http://localhost:3000
+      - http://127.0.0.1:3000
+      - http://localhost:5173
+      - http://127.0.0.1:5173

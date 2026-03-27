@@ -1,30 +1,27 @@
 package com.campus.trade.user.controller;
 
 import com.campus.trade.common.response.ApiResponse;
+import com.campus.trade.user.dto.AddBrowseHistoryRequest;
+import com.campus.trade.user.dto.AddFavoriteRequest;
+import com.campus.trade.user.dto.BrowseHistoryItemResponse;
+import com.campus.trade.user.dto.FavoriteItemResponse;
 import com.campus.trade.user.dto.UpdateUserProfileRequest;
 import com.campus.trade.user.dto.UserMeResponse;
 import com.campus.trade.user.service.UserService;
-import com.campus.trade.user.util.JwtUtil;
+import com.campus.trade.user.util.LoginUserHelper;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.campus.trade.user.dto.AddFavoriteRequest;
-import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import com.campus.trade.user.dto.FavoriteItemResponse;
-import java.util.List;
-import com.campus.trade.user.dto.AddBrowseHistoryRequest;
-import org.springframework.web.bind.annotation.PostMapping;
 
-import com.campus.trade.user.dto.BrowseHistoryItemResponse;
 import java.util.List;
+
 /**
  * User 服务控制器
  */
@@ -33,11 +30,11 @@ import java.util.List;
 public class UserController {
 
   private final UserService userService;
-  private final JwtUtil jwtUtil;
+  private final LoginUserHelper loginUserHelper;
 
-  public UserController(UserService userService, JwtUtil jwtUtil) {
+  public UserController(UserService userService, LoginUserHelper loginUserHelper) {
     this.userService = userService;
-    this.jwtUtil = jwtUtil;
+    this.loginUserHelper = loginUserHelper;
   }
 
   /**
@@ -55,10 +52,7 @@ public class UserController {
   public ApiResponse<UserMeResponse> getMe(
           @RequestHeader("Authorization") String authorizationHeader) {
 
-    String token = authorizationHeader.replace("Bearer ", "");
-    String userId = jwtUtil.getUserId(token);
-
-    return ApiResponse.success(userService.getMe(userId));
+    return ApiResponse.success(userService.getMe(loginUserHelper.getCurrentUserId(authorizationHeader)));
   }
 
   /**
@@ -69,10 +63,7 @@ public class UserController {
           @RequestHeader("Authorization") String authorizationHeader,
           @Valid @RequestBody UpdateUserProfileRequest request) {
 
-    String token = authorizationHeader.replace("Bearer ", "");
-    String userId = jwtUtil.getUserId(token);
-
-    return ApiResponse.success(userService.updateMe(userId, request));
+    return ApiResponse.success(userService.updateMe(loginUserHelper.getCurrentUserId(authorizationHeader), request));
   }
 
   @PostMapping("/me/favorites")
@@ -80,11 +71,7 @@ public class UserController {
           @RequestHeader("Authorization") String authorizationHeader,
           @Valid @RequestBody AddFavoriteRequest request) {
 
-    String token = authorizationHeader.replace("Bearer ", "");
-    String userId = jwtUtil.getUserId(token);
-
-    userService.addFavorite(userId, request);
-
+    userService.addFavorite(loginUserHelper.getCurrentUserId(authorizationHeader), request);
     return ApiResponse.success();
   }
 
@@ -93,11 +80,7 @@ public class UserController {
           @RequestHeader("Authorization") String authorizationHeader,
           @PathVariable String itemId) {
 
-    String token = authorizationHeader.replace("Bearer ", "");
-    String userId = jwtUtil.getUserId(token);
-
-    userService.removeFavorite(userId, itemId);
-
+    userService.removeFavorite(loginUserHelper.getCurrentUserId(authorizationHeader), itemId);
     return ApiResponse.success();
   }
 
@@ -105,10 +88,7 @@ public class UserController {
   public ApiResponse<List<FavoriteItemResponse>> listFavorites(
           @RequestHeader("Authorization") String authorizationHeader) {
 
-    String token = authorizationHeader.replace("Bearer ", "");
-    String userId = jwtUtil.getUserId(token);
-
-    return ApiResponse.success(userService.listFavorites(userId));
+    return ApiResponse.success(userService.listFavorites(loginUserHelper.getCurrentUserId(authorizationHeader)));
   }
 
   @PostMapping("/me/browse-history")
@@ -116,11 +96,7 @@ public class UserController {
           @RequestHeader("Authorization") String authorizationHeader,
           @Valid @RequestBody AddBrowseHistoryRequest request) {
 
-    String token = authorizationHeader.replace("Bearer ", "");
-    String userId = jwtUtil.getUserId(token);
-
-    userService.addBrowseHistory(userId, request);
-
+    userService.addBrowseHistory(loginUserHelper.getCurrentUserId(authorizationHeader), request);
     return ApiResponse.success();
   }
 
@@ -128,9 +104,6 @@ public class UserController {
   public ApiResponse<List<BrowseHistoryItemResponse>> listBrowseHistory(
           @RequestHeader("Authorization") String authorizationHeader) {
 
-    String token = authorizationHeader.replace("Bearer ", "");
-    String userId = jwtUtil.getUserId(token);
-
-    return ApiResponse.success(userService.listBrowseHistory(userId));
+    return ApiResponse.success(userService.listBrowseHistory(loginUserHelper.getCurrentUserId(authorizationHeader)));
   }
 }
