@@ -1,13 +1,17 @@
 package com.campus.trade.auth.util;
 
+import com.campus.trade.auth.config.JwtProperties;
+import com.campus.trade.auth.exception.AuthenticationException;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,11 +22,11 @@ import java.util.Map;
 @Component
 public class JwtUtil {
 
-  @Value("${jwt.secret}")
-  private String secret;
+  private final JwtProperties jwtProperties;
 
-  @Value("${jwt.expiration}")
-  private long expiration;
+  public JwtUtil(JwtProperties jwtProperties) {
+    this.jwtProperties = jwtProperties;
+  }
 
   /**
    * 生成 Token
@@ -31,19 +35,21 @@ public class JwtUtil {
    * @param username 用户名
    * @return JWT Token
    */
-  public String generateToken(String userId, String username) {
-    Date now = new Date();
-    Date expireDate = new Date(now.getTime() + expiration * 1000);
+  public String generateAccessToken(String userId, String username, String sessionId) {
+    Instant now = Instant.now();
+    Instant expireAt = now.plusSeconds(jwtProperties.getAccessTokenExpiration());
 
     Map<String, Object> claims = new HashMap<>();
     claims.put("userId", userId);
     claims.put("username", username);
+    claims.put("type", "access");
+    claims.put("sid", sessionId);
 
     return Jwts.builder()
             .claims(claims)
             .subject(username)
-            .issuedAt(now)
-            .expiration(expireDate)
+            .issuedAt(Date.from(now))
+            .expiration(Date.from(expireAt))
             .signWith(getSignKey())
             .compact();
   }
@@ -55,11 +61,17 @@ public class JwtUtil {
    * @return Claims
    */
   public Claims parseToken(String token) {
-    return Jwts.parser()
-            .verifyWith(getSignKey())
-            .build()
-            .parseSignedClaims(token)
-            .getPayload();
+    try {
+      return Jwts.parser()
+              .verifyWith(getSignKey())
+              .build()
+              .parseSignedClaims(token)
+              .getPayload();
+    } catch (ExpiredJwtException e) {
+      throw new AuthenticationException("access token已过期");
+    } catch (JwtException | IllegalArgumentException e) {
+      throw new AuthenticationException("access token无效");
+    }
   }
 
   /**
@@ -71,8 +83,8 @@ public class JwtUtil {
   public boolean isTokenValid(String token) {
     try {
       Claims claims = parseToken(token);
-      return claims.getExpiration().after(new Date());
-    } catch (Exception e) {
+      return claims.getExpiration().after(new Date()) && "access".equals(claims.get("type"));
+    } catch (AuthenticationException e) {
       return false;
     }
   }
@@ -83,7 +95,10 @@ public class JwtUtil {
   public String getUserId(String token) {
     Claims claims = parseToken(token);
     Object value = claims.get("userId");
-    return value == null ? null : value.toString();
+    if (value == null || value.toString().isBlank()) {
+      throw new AuthenticationException("token用户信息无效");
+    }
+    return value.toString();
   }
 
   /**
@@ -92,13 +107,28 @@ public class JwtUtil {
   public String getUsername(String token) {
     Claims claims = parseToken(token);
     Object value = claims.get("username");
-    return value == null ? null : value.toString();
+    if (value == null || value.toString().isBlank()) {
+      throw new AuthenticationException("token用户信息无效");
+    }
+    return value.toString();
+  }
+
+  public long getAccessTokenExpiration() {
+    return jwtProperties.getAccessTokenExpiration();
+  }
+
+  public void validateAccessToken(String token) {
+    Claims claims = parseToken(token);
+    Object type = claims.get("type");
+    if (!"access".equals(type)) {
+      throw new AuthenticationException("token类型无效");
+    }
   }
 
   /**
    * 获取签名 Key
    */
   private SecretKey getSignKey() {
-    return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
   }
 }

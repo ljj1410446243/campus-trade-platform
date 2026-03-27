@@ -5,7 +5,7 @@ import com.campus.trade.trade.dto.CreateTradeRequest;
 import com.campus.trade.trade.dto.TradeDetailResponse;
 import com.campus.trade.trade.dto.TradeListResponse;
 import com.campus.trade.trade.service.TradeService;
-import com.campus.trade.trade.util.JwtUtil;
+import com.campus.trade.trade.util.LoginUserHelper;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,11 +23,11 @@ import java.util.Map;
 public class TradeController {
 
     private final TradeService tradeService;
-    private final JwtUtil jwtUtil;
+    private final LoginUserHelper loginUserHelper;
 
-    public TradeController(TradeService tradeService, JwtUtil jwtUtil) {
+    public TradeController(TradeService tradeService, LoginUserHelper loginUserHelper) {
         this.tradeService = tradeService;
-        this.jwtUtil = jwtUtil;
+        this.loginUserHelper = loginUserHelper;
     }
 
     @GetMapping("/ping")
@@ -40,9 +40,7 @@ public class TradeController {
             @RequestHeader("Authorization") String authorizationHeader,
             @Valid @RequestBody CreateTradeRequest request) {
 
-        String token = authorizationHeader.replace("Bearer ", "");
-        String buyerId = jwtUtil.getUserId(token);
-
+        String buyerId = loginUserHelper.getCurrentUserId(authorizationHeader);
         String tradeId = tradeService.createTrade(buyerId, request);
         return ApiResponse.success(Map.of("tradeId", tradeId));
     }
@@ -51,20 +49,14 @@ public class TradeController {
     public ApiResponse<List<TradeListResponse>> listBuyingTrades(
             @RequestHeader("Authorization") String authorizationHeader) {
 
-        String token = authorizationHeader.replace("Bearer ", "");
-        String buyerId = jwtUtil.getUserId(token);
-
-        return ApiResponse.success(tradeService.listBuyingTrades(buyerId));
+        return ApiResponse.success(tradeService.listBuyingTrades(loginUserHelper.getCurrentUserId(authorizationHeader)));
     }
 
     @GetMapping("/selling")
     public ApiResponse<List<TradeListResponse>> listSellingTrades(
             @RequestHeader("Authorization") String authorizationHeader) {
 
-        String token = authorizationHeader.replace("Bearer ", "");
-        String sellerId = jwtUtil.getUserId(token);
-
-        return ApiResponse.success(tradeService.listSellingTrades(sellerId));
+        return ApiResponse.success(tradeService.listSellingTrades(loginUserHelper.getCurrentUserId(authorizationHeader)));
     }
 
     @GetMapping("/{tradeId}")
@@ -77,11 +69,7 @@ public class TradeController {
             @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable String tradeId) {
 
-        String token = authorizationHeader.replace("Bearer ", "");
-        String userId = jwtUtil.getUserId(token);
-
-        tradeService.cancelTrade(userId, tradeId);
-
+        tradeService.cancelTrade(loginUserHelper.getCurrentUserId(authorizationHeader), tradeId);
         return ApiResponse.success();
     }
 
@@ -90,11 +78,7 @@ public class TradeController {
             @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable String tradeId) {
 
-        String token = authorizationHeader.replace("Bearer ", "");
-        String userId = jwtUtil.getUserId(token);
-
-        tradeService.completeTrade(userId, tradeId);
-
+        tradeService.completeTrade(loginUserHelper.getCurrentUserId(authorizationHeader), tradeId);
         return ApiResponse.success();
     }
 }

@@ -7,13 +7,15 @@ public class LoginResponse {
 
   private String accessToken;
   private long expiresIn;
+  private String tokenType;
 
   public LoginResponse() {
   }
 
-  public LoginResponse(String accessToken, long expiresIn) {
+  public LoginResponse(String accessToken, long expiresIn, String tokenType) {
     this.accessToken = accessToken;
     this.expiresIn = expiresIn;
+    this.tokenType = tokenType;
   }
 
   public String getAccessToken() {
@@ -30,5 +32,13 @@ public class LoginResponse {
 
   public void setExpiresIn(long expiresIn) {
     this.expiresIn = expiresIn;
+  }
+
+  public String getTokenType() {
+    return tokenType;
+  }
+
+  public void setTokenType(String tokenType) {
+    this.tokenType = tokenType;
   }
 }
