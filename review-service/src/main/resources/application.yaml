@@ -15,5 +15,5 @@ logging:
     com.campus.trade.review: debug
 
 jwt:
-  secret: your-very-secret-key-your-very-secret-key
+  secret: campusTradeSecretKeyCampusTradeSecretKey123456
   expiration: 900
