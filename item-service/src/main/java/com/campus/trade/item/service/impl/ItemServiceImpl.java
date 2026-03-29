@@ -55,7 +55,9 @@ public class ItemServiceImpl implements ItemService {
         item.setCategoryName(request.getCategoryName());
         item.setPrice(request.getPrice());
         item.setConditionStar(request.getConditionStar());
-        item.setImages(request.getImages() == null ? new ArrayList<>() : request.getImages());
+        List<String> images = normalizeImages(request.getImages());
+        item.setImages(images);
+        item.setCoverImage(resolveCoverImage(images));
         item.setTradeMode(request.getTradeMode());
         item.setStatus("ON_SALE");
 
@@ -118,7 +120,9 @@ public class ItemServiceImpl implements ItemService {
         item.setPrice(request.getPrice());
         item.setConditionStar(request.getConditionStar());
         item.setTradeMode(request.getTradeMode());
-        item.setImages(request.getImages() == null ? new ArrayList<>() : request.getImages());
+        List<String> images = normalizeImages(request.getImages());
+        item.setImages(images);
+        item.setCoverImage(resolveCoverImage(images));
 
         if (request.getLocation() != null) {
             Item.Location location = new Item.Location();
@@ -307,6 +311,7 @@ public class ItemServiceImpl implements ItemService {
         response.setPrice(item.getPrice());
         response.setConditionStar(item.getConditionStar());
         response.setImages(item.getImages());
+        response.setCoverImage(item.getCoverImage());
         response.setTradeMode(item.getTradeMode());
         response.setStatus(item.getStatus());
         response.setCreatedAt(item.getCreatedAt());
@@ -326,6 +331,7 @@ public class ItemServiceImpl implements ItemService {
         response.setPrice(item.getPrice());
         response.setConditionStar(item.getConditionStar());
         response.setImages(item.getImages());
+        response.setCoverImage(item.getCoverImage());
         response.setStatus(item.getStatus());
         response.setCreatedAt(item.getCreatedAt());
         return response;
@@ -338,9 +344,7 @@ public class ItemServiceImpl implements ItemService {
         response.setPrice(item.getPrice());
         response.setConditionStar(item.getConditionStar());
 
-        if (item.getImages() != null && !item.getImages().isEmpty()) {
-            response.setCoverImage(item.getImages().get(0));
-        }
+        response.setCoverImage(resolveCoverImage(item.getImages(), item.getCoverImage()));
 
         int hotScore = 0;
         if (item.getStats() != null) {
@@ -351,5 +355,24 @@ public class ItemServiceImpl implements ItemService {
         response.setHotScore(hotScore);
 
         return response;
+    }
+
+    private List<String> normalizeImages(List<String> images) {
+        List<String> normalized = images == null ? new ArrayList<>() : new ArrayList<>(images);
+        if (normalized.size() > 9) {
+            throw new BusinessException("商品图片最多9张");
+        }
+        return normalized;
+    }
+
+    private String resolveCoverImage(List<String> images) {
+        return resolveCoverImage(images, null);
+    }
+
+    private String resolveCoverImage(List<String> images, String existingCoverImage) {
+        if (images != null && !images.isEmpty()) {
+            return images.get(0);
+        }
+        return existingCoverImage;
     }
 }

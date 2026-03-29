@@ -14,6 +14,7 @@
         <module>user-service</module>
         <module>item-service</module>
         <module>trade-service</module>
+        <module>file-service</module>
     </modules>
 
     <properties>

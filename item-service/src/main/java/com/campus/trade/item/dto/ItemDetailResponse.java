@@ -15,6 +15,7 @@ public class ItemDetailResponse {
     private BigDecimal price;
     private Integer conditionStar;
     private List<String> images;
+    private String coverImage;
     private String tradeMode;
     private Double lat;
     private Double lng;
@@ -91,6 +92,14 @@ public class ItemDetailResponse {
 
     public void setImages(List<String> images) {
         this.images = images;
+    }
+
+    public String getCoverImage() {
+        return coverImage;
+    }
+
+    public void setCoverImage(String coverImage) {
+        this.coverImage = coverImage;
     }
 
     public String getTradeMode() {
