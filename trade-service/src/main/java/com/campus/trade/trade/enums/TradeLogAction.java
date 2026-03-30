@@ -1,0 +1,14 @@
+package com.campus.trade.trade.enums;
+
+public enum TradeLogAction {
+    ORDER_CREATED,
+    PAYMENT_INITIATED,
+    PAYMENT_SUCCEEDED,
+    ORDER_CANCELLED,
+    SELLER_DELIVERED,
+    BUYER_CONFIRMED,
+    REFUND_REQUESTED,
+    REFUND_COMPLETED,
+    PAYMENT_CALLBACK_RECEIVED,
+    AUTO_CLOSED
+}

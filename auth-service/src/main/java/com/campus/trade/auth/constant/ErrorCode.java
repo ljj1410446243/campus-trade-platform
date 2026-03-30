@@ -14,6 +14,11 @@ public final class ErrorCode {
   public static final int BAD_REQUEST = 400;
 
   /**
+   * 未授权
+   */
+  public static final int UNAUTHORIZED = 401;
+
+  /**
    * 认证相关业务错误
    */
   public static final int AUTH_ERROR = 4001;

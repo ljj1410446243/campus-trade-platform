@@ -9,7 +9,7 @@ import com.campus.trade.item.dto.SearchItemPageResponse;
 import com.campus.trade.item.dto.UpdateItemRequest;
 import com.campus.trade.item.model.ItemComment;
 import com.campus.trade.item.service.ItemService;
-import com.campus.trade.item.util.JwtUtil;
+import com.campus.trade.item.util.LoginUserHelper;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,11 +30,11 @@ import java.util.Map;
 public class ItemController {
 
     private final ItemService itemService;
-    private final JwtUtil jwtUtil;
+    private final LoginUserHelper loginUserHelper;
 
-    public ItemController(ItemService itemService, JwtUtil jwtUtil) {
+    public ItemController(ItemService itemService, LoginUserHelper loginUserHelper) {
         this.itemService = itemService;
-        this.jwtUtil = jwtUtil;
+        this.loginUserHelper = loginUserHelper;
     }
 
     @GetMapping("/items/ping")
@@ -47,9 +47,7 @@ public class ItemController {
             @RequestHeader("Authorization") String authorizationHeader,
             @Valid @RequestBody CreateItemRequest request) {
 
-        String token = authorizationHeader.replace("Bearer ", "");
-        String sellerId = jwtUtil.getUserId(token);
-
+        String sellerId = loginUserHelper.getCurrentUserId(authorizationHeader);
         String itemId = itemService.createItem(sellerId, request);
 
         return ApiResponse.success(Map.of("itemId", itemId));
@@ -61,9 +59,7 @@ public class ItemController {
             @PathVariable String itemId,
             @Valid @RequestBody UpdateItemRequest request) {
 
-        String token = authorizationHeader.replace("Bearer ", "");
-        String sellerId = jwtUtil.getUserId(token);
-
+        String sellerId = loginUserHelper.getCurrentUserId(authorizationHeader);
         return ApiResponse.success(itemService.updateItem(sellerId, itemId, request));
     }
 
@@ -72,9 +68,7 @@ public class ItemController {
             @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable String itemId) {
 
-        String token = authorizationHeader.replace("Bearer ", "");
-        String sellerId = jwtUtil.getUserId(token);
-
+        String sellerId = loginUserHelper.getCurrentUserId(authorizationHeader);
         itemService.offShelfItem(sellerId, itemId);
         return ApiResponse.success();
     }
@@ -88,10 +82,7 @@ public class ItemController {
     public ApiResponse<List<ItemListResponse>> listMyItems(
             @RequestHeader("Authorization") String authorizationHeader) {
 
-        String token = authorizationHeader.replace("Bearer ", "");
-        String sellerId = jwtUtil.getUserId(token);
-
-        return ApiResponse.success(itemService.listMyItems(sellerId));
+        return ApiResponse.success(itemService.listMyItems(loginUserHelper.getCurrentUserId(authorizationHeader)));
     }
 
     @GetMapping("/search/items")
@@ -128,9 +119,7 @@ public class ItemController {
             @PathVariable String itemId,
             @Valid @RequestBody AddCommentRequest request) {
 
-        String token = authorizationHeader.replace("Bearer ", "");
-        String userId = jwtUtil.getUserId(token);
-
+        String userId = loginUserHelper.getCurrentUserId(authorizationHeader);
         itemService.addItemComment(userId, itemId, request.getComment(), request.getRating());
 
         return ApiResponse.success();

@@ -9,7 +9,11 @@ public interface AuthService {
 
   String ping();
 
-  LoginResponse login(LoginRequest request);
+  AuthTokenResult login(LoginRequest request, ClientContext clientContext);
+
+  AuthTokenResult refresh(String refreshToken, ClientContext clientContext);
+
+  void logout(String refreshToken);
 
   TokenPayloadResponse parseToken(String token);
 
