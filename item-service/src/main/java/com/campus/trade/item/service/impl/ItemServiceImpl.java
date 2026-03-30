@@ -1,6 +1,7 @@
 package com.campus.trade.item.service.impl;
 
 import com.campus.trade.item.dto.CreateItemRequest;
+import com.campus.trade.item.dto.ItemCommentResponse;
 import com.campus.trade.item.dto.ItemDetailResponse;
 import com.campus.trade.item.dto.ItemListResponse;
 import com.campus.trade.item.dto.SearchItemPageResponse;
@@ -9,8 +10,10 @@ import com.campus.trade.item.dto.UpdateItemRequest;
 import com.campus.trade.item.exception.BusinessException;
 import com.campus.trade.item.model.Item;
 import com.campus.trade.item.model.ItemComment;
+import com.campus.trade.item.model.User;
 import com.campus.trade.item.repository.ItemCommentRepository;
 import com.campus.trade.item.repository.ItemRepository;
+import com.campus.trade.item.repository.UserRepository;
 import com.campus.trade.item.service.ItemService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -30,13 +33,16 @@ public class ItemServiceImpl implements ItemService {
 
     private final ItemRepository itemRepository;
     private final ItemCommentRepository itemCommentRepository;
+    private final UserRepository userRepository;
     private final MongoTemplate mongoTemplate;
 
     public ItemServiceImpl(ItemRepository itemRepository,
                            ItemCommentRepository itemCommentRepository,
+                           UserRepository userRepository,
                            MongoTemplate mongoTemplate) {
         this.itemRepository = itemRepository;
         this.itemCommentRepository = itemCommentRepository;
+        this.userRepository = userRepository;
         this.mongoTemplate = mongoTemplate;
     }
 
@@ -59,6 +65,7 @@ public class ItemServiceImpl implements ItemService {
         item.setImages(images);
         item.setCoverImage(resolveCoverImage(images));
         item.setTradeMode(request.getTradeMode());
+        item.setExpireAt(request.getExpireAt());
         item.setStatus("ON_SALE");
 
         if (request.getLocation() != null) {
@@ -120,6 +127,7 @@ public class ItemServiceImpl implements ItemService {
         item.setPrice(request.getPrice());
         item.setConditionStar(request.getConditionStar());
         item.setTradeMode(request.getTradeMode());
+        item.setExpireAt(request.getExpireAt());
         List<String> images = normalizeImages(request.getImages());
         item.setImages(images);
         item.setCoverImage(resolveCoverImage(images));
@@ -267,19 +275,19 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public void addItemComment(String userId, String itemId, String comment, Integer rating) {
+    public void addItemComment(String userId, String itemId, String content, Integer rating) {
         itemRepository.findById(itemId)
                 .orElseThrow(() -> new BusinessException("商品不存在"));
 
-        if (rating == null || rating < 1 || rating > 5) {
+        if (rating != null && (rating < 1 || rating > 5)) {
             throw new BusinessException("评论评分必须在1到5之间");
         }
 
         ItemComment itemComment = new ItemComment();
         itemComment.setItemId(itemId);
         itemComment.setUserId(userId);
-        itemComment.setUsername("用户");
-        itemComment.setComment(comment);
+        itemComment.setUsername(resolveDisplayName(userId));
+        itemComment.setComment(content);
         itemComment.setRating(rating);
         itemComment.setCreatedAt(new Date());
 
@@ -287,11 +295,14 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemComment> getItemComments(String itemId) {
+    public List<ItemCommentResponse> getItemComments(String itemId) {
         itemRepository.findById(itemId)
                 .orElseThrow(() -> new BusinessException("商品不存在"));
 
-        return itemCommentRepository.findByItemId(itemId);
+        return itemCommentRepository.findByItemId(itemId)
+                .stream()
+                .map(this::toItemCommentResponse)
+                .toList();
     }
 
     private void validateOwner(String sellerId, Item item) {
@@ -315,6 +326,8 @@ public class ItemServiceImpl implements ItemService {
         response.setTradeMode(item.getTradeMode());
         response.setStatus(item.getStatus());
         response.setCreatedAt(item.getCreatedAt());
+        response.setSeller(buildSellerInfo(item.getSellerId()));
+        response.setStats(buildStatsInfo(item.getStats()));
 
         if (item.getLocation() != null) {
             response.setLat(item.getLocation().getLat());
@@ -374,5 +387,50 @@ public class ItemServiceImpl implements ItemService {
             return images.get(0);
         }
         return existingCoverImage;
+    }
+
+    private ItemDetailResponse.SellerInfo buildSellerInfo(String sellerId) {
+        ItemDetailResponse.SellerInfo sellerInfo = new ItemDetailResponse.SellerInfo();
+        sellerInfo.setUserId(sellerId);
+
+        userRepository.findById(sellerId).ifPresent(user -> {
+            sellerInfo.setNickname(resolveDisplayName(user));
+            sellerInfo.setAvatarUrl(user.getAvatarUrl());
+        });
+
+        return sellerInfo;
+    }
+
+    private ItemDetailResponse.StatsInfo buildStatsInfo(Item.Stats stats) {
+        ItemDetailResponse.StatsInfo statsInfo = new ItemDetailResponse.StatsInfo();
+        statsInfo.setViewCount(stats == null || stats.getViewCount() == null ? 0 : stats.getViewCount());
+        statsInfo.setFavoriteCount(stats == null || stats.getFavoriteCount() == null ? 0 : stats.getFavoriteCount());
+        return statsInfo;
+    }
+
+    private ItemCommentResponse toItemCommentResponse(ItemComment itemComment) {
+        ItemCommentResponse response = new ItemCommentResponse();
+        response.setCommentId(itemComment.getId());
+        response.setUserId(itemComment.getUserId());
+        response.setNickname(itemComment.getUsername());
+        response.setContent(itemComment.getComment());
+        response.setCreatedAt(itemComment.getCreatedAt());
+        return response;
+    }
+
+    private String resolveDisplayName(String userId) {
+        return userRepository.findById(userId)
+                .map(this::resolveDisplayName)
+                .orElse(userId);
+    }
+
+    private String resolveDisplayName(User user) {
+        if (user.getNickname() != null && !user.getNickname().isBlank()) {
+            return user.getNickname();
+        }
+        if (user.getUsername() != null && !user.getUsername().isBlank()) {
+            return user.getUsername();
+        }
+        return user.getId();
     }
 }

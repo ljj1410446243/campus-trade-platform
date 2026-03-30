@@ -6,6 +6,57 @@ import java.util.List;
 
 public class ItemDetailResponse {
 
+    public static class SellerInfo {
+        private String userId;
+        private String nickname;
+        private String avatarUrl;
+
+        public String getUserId() {
+            return userId;
+        }
+
+        public void setUserId(String userId) {
+            this.userId = userId;
+        }
+
+        public String getNickname() {
+            return nickname;
+        }
+
+        public void setNickname(String nickname) {
+            this.nickname = nickname;
+        }
+
+        public String getAvatarUrl() {
+            return avatarUrl;
+        }
+
+        public void setAvatarUrl(String avatarUrl) {
+            this.avatarUrl = avatarUrl;
+        }
+    }
+
+    public static class StatsInfo {
+        private Integer viewCount;
+        private Integer favoriteCount;
+
+        public Integer getViewCount() {
+            return viewCount;
+        }
+
+        public void setViewCount(Integer viewCount) {
+            this.viewCount = viewCount;
+        }
+
+        public Integer getFavoriteCount() {
+            return favoriteCount;
+        }
+
+        public void setFavoriteCount(Integer favoriteCount) {
+            this.favoriteCount = favoriteCount;
+        }
+    }
+
     private String itemId;
     private String sellerId;
     private String title;
@@ -20,6 +71,8 @@ public class ItemDetailResponse {
     private Double lat;
     private Double lng;
     private String status;
+    private SellerInfo seller;
+    private StatsInfo stats;
     private Date createdAt;
 
     public String getItemId() {
@@ -132,6 +185,22 @@ public class ItemDetailResponse {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public SellerInfo getSeller() {
+        return seller;
+    }
+
+    public void setSeller(SellerInfo seller) {
+        this.seller = seller;
+    }
+
+    public StatsInfo getStats() {
+        return stats;
+    }
+
+    public void setStats(StatsInfo stats) {
+        this.stats = stats;
     }
 
     public Date getCreatedAt() {

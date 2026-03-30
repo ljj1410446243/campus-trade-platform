@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 
 public class UpdateItemRequest {
@@ -36,6 +37,8 @@ public class UpdateItemRequest {
     private String tradeMode;
 
     private List<String> images;
+
+    private Date expireAt;
 
     private LocationDTO location;
 
@@ -101,6 +104,14 @@ public class UpdateItemRequest {
 
     public void setImages(List<String> images) {
         this.images = images;
+    }
+
+    public Date getExpireAt() {
+        return expireAt;
+    }
+
+    public void setExpireAt(Date expireAt) {
+        this.expireAt = expireAt;
     }
 
     public LocationDTO getLocation() {

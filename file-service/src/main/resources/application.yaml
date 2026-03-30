@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: file-service
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/campus_trade
+  servlet:
+    multipart:
+      max-file-size: 6MB
+      max-request-size: 50MB
+
+server:
+  port: 8087
+
+jwt:
+  secret: campusTradeSecretKeyCampusTradeSecretKey123456
+
+app:
+  cors:
+    allowed-origins:
+      - http://localhost:3000
+      - http://127.0.0.1:3000
+      - http://localhost:5173
+      - http://127.0.0.1:5173
+  file:
+    root-dir: ./data/files
+    public-base-url: http://localhost:${server.port}
