@@ -1,71 +1,42 @@
 package com.campus.trade.trade.dto;
 
+import com.campus.trade.trade.enums.PayChannel;
+import com.campus.trade.trade.enums.PayStatus;
+import com.campus.trade.trade.enums.TradeStatus;
+import lombok.Data;
+
 import java.math.BigDecimal;
 import java.util.Date;
 
+@Data
 public class TradeListResponse {
 
     private String tradeId;
-    private String itemId;
-    private String buyerId;
-    private String sellerId;
-    private Double price;
-    private String status;
+    private String tradeNo;
+    private BigDecimal amount;
+    private TradeStatus status;
+    private PayStatus payStatus;
+    private PayChannel payChannel;
     private Date createdAt;
+    private Date paidAt;
+    private Date payExpireAt;
+    private TradeItemInfo item;
+    private TradeUserInfo buyer;
+    private TradeUserInfo seller;
 
-    public String getTradeId() {
-        return tradeId;
+    @Data
+    public static class TradeItemInfo {
+        private String itemId;
+        private String title;
+        private String coverImage;
+        private BigDecimal price;
+        private Integer conditionStar;
     }
 
-    public void setTradeId(String tradeId) {
-        this.tradeId = tradeId;
-    }
-
-    public String getItemId() {
-        return itemId;
-    }
-
-    public void setItemId(String itemId) {
-        this.itemId = itemId;
-    }
-
-    public String getBuyerId() {
-        return buyerId;
-    }
-
-    public void setBuyerId(String buyerId) {
-        this.buyerId = buyerId;
-    }
-
-    public String getSellerId() {
-        return sellerId;
-    }
-
-    public void setSellerId(String sellerId) {
-        this.sellerId = sellerId;
-    }
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
+    @Data
+    public static class TradeUserInfo {
+        private String userId;
+        private String nickname;
+        private String avatarUrl;
     }
 }
