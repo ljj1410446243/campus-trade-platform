@@ -1,27 +1,33 @@
 package com.campus.trade.item.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 
 /**
  * 评论请求 DTO
  */
 public class AddCommentRequest {
 
-    @NotBlank(message = "comment不能为空")
-    private String comment;
+    @JsonAlias("comment")
+    @NotBlank(message = "content不能为空")
+    private String content;
 
-    @Min(value = 1, message = "评分最小为1")
-    @Max(value = 5, message = "评分最大为5")
     private Integer rating;
 
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
     public String getComment() {
-        return comment;
+        return content;
     }
 
     public void setComment(String comment) {
-        this.comment = comment;
+        this.content = comment;
     }
 
     public Integer getRating() {

@@ -1,5 +1,6 @@
 package com.campus.trade.user.dto;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 /**
@@ -8,14 +9,18 @@ import java.util.Date;
 public class BrowseHistoryItemResponse {
 
     private String itemId;
+    private String title;
+    private BigDecimal price;
     private Date viewedAt;
     private String source;
 
     public BrowseHistoryItemResponse() {
     }
 
-    public BrowseHistoryItemResponse(String itemId, Date viewedAt, String source) {
+    public BrowseHistoryItemResponse(String itemId, String title, BigDecimal price, Date viewedAt, String source) {
         this.itemId = itemId;
+        this.title = title;
+        this.price = price;
         this.viewedAt = viewedAt;
         this.source = source;
     }
@@ -26,6 +31,22 @@ public class BrowseHistoryItemResponse {
 
     public void setItemId(String itemId) {
         this.itemId = itemId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
     }
 
     public Date getViewedAt() {

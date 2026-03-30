@@ -11,6 +11,7 @@ public class ItemListResponse {
     private BigDecimal price;
     private Integer conditionStar;
     private List<String> images;
+    private String coverImage;
     private String status;
     private Date createdAt;
 
@@ -52,6 +53,14 @@ public class ItemListResponse {
 
     public void setImages(List<String> images) {
         this.images = images;
+    }
+
+    public String getCoverImage() {
+        return coverImage;
+    }
+
+    public void setCoverImage(String coverImage) {
+        this.coverImage = coverImage;
     }
 
     public String getStatus() {

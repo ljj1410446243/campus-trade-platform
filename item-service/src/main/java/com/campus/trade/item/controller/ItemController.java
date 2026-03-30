@@ -3,11 +3,11 @@ package com.campus.trade.item.controller;
 import com.campus.trade.common.response.ApiResponse;
 import com.campus.trade.item.dto.AddCommentRequest;
 import com.campus.trade.item.dto.CreateItemRequest;
+import com.campus.trade.item.dto.ItemCommentResponse;
 import com.campus.trade.item.dto.ItemDetailResponse;
 import com.campus.trade.item.dto.ItemListResponse;
 import com.campus.trade.item.dto.SearchItemPageResponse;
 import com.campus.trade.item.dto.UpdateItemRequest;
-import com.campus.trade.item.model.ItemComment;
 import com.campus.trade.item.service.ItemService;
 import com.campus.trade.item.util.LoginUserHelper;
 import jakarta.validation.Valid;
@@ -120,13 +120,13 @@ public class ItemController {
             @Valid @RequestBody AddCommentRequest request) {
 
         String userId = loginUserHelper.getCurrentUserId(authorizationHeader);
-        itemService.addItemComment(userId, itemId, request.getComment(), request.getRating());
+        itemService.addItemComment(userId, itemId, request.getContent(), request.getRating());
 
         return ApiResponse.success();
     }
 
     @GetMapping("/items/{itemId}/comments")
-    public ApiResponse<List<ItemComment>> getItemComments(@PathVariable String itemId) {
+    public ApiResponse<List<ItemCommentResponse>> getItemComments(@PathVariable String itemId) {
         return ApiResponse.success(itemService.getItemComments(itemId));
     }
 }

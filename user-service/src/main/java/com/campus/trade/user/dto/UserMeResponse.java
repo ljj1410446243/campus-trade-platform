@@ -6,6 +6,7 @@ package com.campus.trade.user.dto;
 public class UserMeResponse {
 
   private String userId;
+  private String username;
   private String nickname;
   private String avatarUrl;
   private Boolean campusVerified;
@@ -15,9 +16,10 @@ public class UserMeResponse {
   public UserMeResponse() {
   }
 
-  public UserMeResponse(String userId, String nickname, String avatarUrl,
+  public UserMeResponse(String userId, String username, String nickname, String avatarUrl,
                         Boolean campusVerified, Integer creditScore, String role) {
     this.userId = userId;
+    this.username = username;
     this.nickname = nickname;
     this.avatarUrl = avatarUrl;
     this.campusVerified = campusVerified;
@@ -31,6 +33,14 @@ public class UserMeResponse {
 
   public void setUserId(String userId) {
     this.userId = userId;
+  }
+
+  public String getUsername() {
+    return username;
+  }
+
+  public void setUsername(String username) {
+    this.username = username;
   }
 
   public String getNickname() {

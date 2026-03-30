@@ -25,6 +25,7 @@ public class Item {
     private Integer conditionStar;
 
     private List<String> images;
+    private String coverImage;
 
     /**
      * ONLINE | OFFLINE | BOTH
@@ -166,6 +167,14 @@ public class Item {
 
     public void setImages(List<String> images) {
         this.images = images;
+    }
+
+    public String getCoverImage() {
+        return coverImage;
+    }
+
+    public void setCoverImage(String coverImage) {
+        this.coverImage = coverImage;
     }
 
     public String getTradeMode() {

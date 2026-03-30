@@ -15,10 +15,13 @@ import com.campus.trade.user.dto.FavoriteItemResponse;
 import java.util.List;
 import com.campus.trade.user.dto.AddBrowseHistoryRequest;
 import com.campus.trade.user.model.BrowseHistory;
+import com.campus.trade.user.model.Item;
 import com.campus.trade.user.repository.BrowseHistoryRepository;
+import com.campus.trade.user.repository.ItemRepository;
 import com.campus.trade.user.dto.BrowseHistoryItemResponse;
 import com.campus.trade.user.exception.BusinessException;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 /**
  * 用户服务实现类
  */
@@ -28,13 +31,16 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final FavoriteRepository favoriteRepository;
     private final BrowseHistoryRepository browseHistoryRepository;
+    private final ItemRepository itemRepository;
 
     public UserServiceImpl(UserRepository userRepository,
                            FavoriteRepository favoriteRepository,
-                           BrowseHistoryRepository browseHistoryRepository) {
+                           BrowseHistoryRepository browseHistoryRepository,
+                           ItemRepository itemRepository) {
         this.userRepository = userRepository;
         this.favoriteRepository = favoriteRepository;
         this.browseHistoryRepository = browseHistoryRepository;
+        this.itemRepository = itemRepository;
     }
 
     @Override
@@ -79,10 +85,11 @@ public class UserServiceImpl implements UserService {
     private UserMeResponse buildUserMeResponse(User user) {
         return new UserMeResponse(
                 user.getId(),
+                user.getUsername(),
                 user.getNickname(),
                 user.getAvatarUrl(),
                 user.isCampusVerified(),
-                95,
+                0,
                 user.getRole()
         );
     }
@@ -100,12 +107,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<FavoriteItemResponse> listFavorites(String userId) {
+        Map<String, Item> itemCache = new HashMap<>();
         return favoriteRepository.findByUserIdOrderByCreatedAtDesc(userId)
                 .stream()
-                .map(favorite -> new FavoriteItemResponse(
-                        favorite.getItemId(),
-                        favorite.getCreatedAt()
-                ))
+                .map(favorite -> toFavoriteItemResponse(favorite, itemCache))
                 .toList();
     }
 
@@ -124,13 +129,43 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<BrowseHistoryItemResponse> listBrowseHistory(String userId) {
+        Map<String, Item> itemCache = new HashMap<>();
         return browseHistoryRepository.findByUserIdOrderByViewedAtDesc(userId)
                 .stream()
-                .map(history -> new BrowseHistoryItemResponse(
-                        history.getItemId(),
-                        history.getViewedAt(),
-                        history.getSource()
-                ))
+                .map(history -> toBrowseHistoryItemResponse(history, itemCache))
                 .toList();
+    }
+
+    private FavoriteItemResponse toFavoriteItemResponse(Favorite favorite, Map<String, Item> itemCache) {
+        Item item = findItem(favorite.getItemId(), itemCache);
+        return new FavoriteItemResponse(
+                favorite.getItemId(),
+                item == null ? null : item.getTitle(),
+                item == null ? null : item.getPrice(),
+                item == null ? null : item.getConditionStar(),
+                item == null ? null : item.getCoverImage(),
+                favorite.getCreatedAt()
+        );
+    }
+
+    private BrowseHistoryItemResponse toBrowseHistoryItemResponse(BrowseHistory history, Map<String, Item> itemCache) {
+        Item item = findItem(history.getItemId(), itemCache);
+        return new BrowseHistoryItemResponse(
+                history.getItemId(),
+                item == null ? null : item.getTitle(),
+                item == null ? null : item.getPrice(),
+                history.getViewedAt(),
+                history.getSource()
+        );
+    }
+
+    private Item findItem(String itemId, Map<String, Item> itemCache) {
+        if (itemCache.containsKey(itemId)) {
+            return itemCache.get(itemId);
+        }
+
+        Item item = itemRepository.findById(itemId).orElse(null);
+        itemCache.put(itemId, item);
+        return item;
     }
 }
