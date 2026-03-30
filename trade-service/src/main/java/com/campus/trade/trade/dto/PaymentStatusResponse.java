@@ -1,23 +1,19 @@
 package com.campus.trade.trade.dto;
 
-import java.math.BigDecimal;
 import java.util.Date;
 
-public class TradeListResponse {
+public class PaymentStatusResponse {
 
     private String tradeId;
     private String tradeNo;
-    private String itemId;
-    private String buyerId;
-    private String sellerId;
-    private Double price;
     private String status;
     private String payStatus;
     private String payChannel;
     private String outTradeNo;
+    private String providerTradeNo;
     private Date payExpireAt;
     private Date paidAt;
-    private Date createdAt;
+    private Date updatedAt;
 
     public String getTradeId() {
         return tradeId;
@@ -33,38 +29,6 @@ public class TradeListResponse {
 
     public void setTradeNo(String tradeNo) {
         this.tradeNo = tradeNo;
-    }
-
-    public String getItemId() {
-        return itemId;
-    }
-
-    public void setItemId(String itemId) {
-        this.itemId = itemId;
-    }
-
-    public String getBuyerId() {
-        return buyerId;
-    }
-
-    public void setBuyerId(String buyerId) {
-        this.buyerId = buyerId;
-    }
-
-    public String getSellerId() {
-        return sellerId;
-    }
-
-    public void setSellerId(String sellerId) {
-        this.sellerId = sellerId;
-    }
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
     }
 
     public String getStatus() {
@@ -99,6 +63,14 @@ public class TradeListResponse {
         this.outTradeNo = outTradeNo;
     }
 
+    public String getProviderTradeNo() {
+        return providerTradeNo;
+    }
+
+    public void setProviderTradeNo(String providerTradeNo) {
+        this.providerTradeNo = providerTradeNo;
+    }
+
     public Date getPayExpireAt() {
         return payExpireAt;
     }
@@ -115,11 +87,11 @@ public class TradeListResponse {
         this.paidAt = paidAt;
     }
 
-    public Date getCreatedAt() {
-        return createdAt;
+    public Date getUpdatedAt() {
+        return updatedAt;
     }
 
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

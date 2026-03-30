@@ -1,23 +1,19 @@
 package com.campus.trade.trade.dto;
 
-import java.math.BigDecimal;
 import java.util.Date;
+import java.util.Map;
 
-public class TradeListResponse {
+public class InitiatePaymentResponse {
 
     private String tradeId;
     private String tradeNo;
-    private String itemId;
-    private String buyerId;
-    private String sellerId;
-    private Double price;
     private String status;
     private String payStatus;
     private String payChannel;
+    private Double amount;
     private String outTradeNo;
     private Date payExpireAt;
-    private Date paidAt;
-    private Date createdAt;
+    private Map<String, Object> paymentData;
 
     public String getTradeId() {
         return tradeId;
@@ -33,38 +29,6 @@ public class TradeListResponse {
 
     public void setTradeNo(String tradeNo) {
         this.tradeNo = tradeNo;
-    }
-
-    public String getItemId() {
-        return itemId;
-    }
-
-    public void setItemId(String itemId) {
-        this.itemId = itemId;
-    }
-
-    public String getBuyerId() {
-        return buyerId;
-    }
-
-    public void setBuyerId(String buyerId) {
-        this.buyerId = buyerId;
-    }
-
-    public String getSellerId() {
-        return sellerId;
-    }
-
-    public void setSellerId(String sellerId) {
-        this.sellerId = sellerId;
-    }
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
     }
 
     public String getStatus() {
@@ -91,6 +55,14 @@ public class TradeListResponse {
         this.payChannel = payChannel;
     }
 
+    public Double getAmount() {
+        return amount;
+    }
+
+    public void setAmount(Double amount) {
+        this.amount = amount;
+    }
+
     public String getOutTradeNo() {
         return outTradeNo;
     }
@@ -107,19 +79,11 @@ public class TradeListResponse {
         this.payExpireAt = payExpireAt;
     }
 
-    public Date getPaidAt() {
-        return paidAt;
+    public Map<String, Object> getPaymentData() {
+        return paymentData;
     }
 
-    public void setPaidAt(Date paidAt) {
-        this.paidAt = paidAt;
-    }
-
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
+    public void setPaymentData(Map<String, Object> paymentData) {
+        this.paymentData = paymentData;
     }
 }

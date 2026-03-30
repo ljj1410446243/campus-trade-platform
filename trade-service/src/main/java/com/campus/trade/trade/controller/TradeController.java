@@ -2,6 +2,9 @@ package com.campus.trade.trade.controller;
 
 import com.campus.trade.common.response.ApiResponse;
 import com.campus.trade.trade.dto.CreateTradeRequest;
+import com.campus.trade.trade.dto.InitiatePaymentRequest;
+import com.campus.trade.trade.dto.InitiatePaymentResponse;
+import com.campus.trade.trade.dto.PaymentStatusResponse;
 import com.campus.trade.trade.dto.TradeDetailResponse;
 import com.campus.trade.trade.dto.TradeListResponse;
 import com.campus.trade.trade.service.TradeService;
@@ -71,6 +74,35 @@ public class TradeController {
 
         tradeService.cancelTrade(loginUserHelper.getCurrentUserId(authorizationHeader), tradeId);
         return ApiResponse.success();
+    }
+
+    @PostMapping("/{tradeId}/pay")
+    public ApiResponse<InitiatePaymentResponse> initiatePayment(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @PathVariable String tradeId,
+            @RequestBody(required = false) InitiatePaymentRequest request) {
+
+        String buyerId = loginUserHelper.getCurrentUserId(authorizationHeader);
+        InitiatePaymentRequest safeRequest = request == null ? new InitiatePaymentRequest() : request;
+        return ApiResponse.success(tradeService.initiatePayment(buyerId, tradeId, safeRequest));
+    }
+
+    @GetMapping("/{tradeId}/pay-status")
+    public ApiResponse<PaymentStatusResponse> queryPaymentStatus(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @PathVariable String tradeId) {
+
+        String userId = loginUserHelper.getCurrentUserId(authorizationHeader);
+        return ApiResponse.success(tradeService.queryPaymentStatus(userId, tradeId));
+    }
+
+    @PostMapping("/{tradeId}/mock-pay")
+    public ApiResponse<PaymentStatusResponse> mockPay(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @PathVariable String tradeId) {
+
+        String buyerId = loginUserHelper.getCurrentUserId(authorizationHeader);
+        return ApiResponse.success(tradeService.mockPay(buyerId, tradeId));
     }
 
     @PostMapping("/{tradeId}/complete")

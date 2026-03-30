@@ -17,5 +17,18 @@ public class TradeDetailResponse {
 
     private Double price;
     private String status;
+    private String tradeNo;
+    private String payStatus;
+    private String payChannel;
+    private String outTradeNo;
+    private String providerTradeNo;
+    private Date payExpireAt;
+    private Date paidAt;
+    private Date deliveredAt;
+    private Date confirmedAt;
+    private Date completedAt;
+    private Date cancelledAt;
+    private String cancelReason;
+    private String refundReason;
     private Date createdAt;
 }
