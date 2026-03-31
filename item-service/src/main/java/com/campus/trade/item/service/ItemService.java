@@ -31,10 +31,19 @@ public interface ItemService {
                                        Integer minCondition,
                                        Integer maxCondition,
                                        String sort,
+                                       Double lat,
+                                       Double lng,
+                                       Integer radiusMeters,
+                                       String sortBy,
                                        Integer page,
                                        Integer pageSize);
 
-    SearchItemPageResponse recommendItems(Integer page, Integer pageSize);
+    SearchItemPageResponse recommendItems(Double lat,
+                                          Double lng,
+                                          Integer radiusMeters,
+                                          String sortBy,
+                                          Integer page,
+                                          Integer pageSize);
 
     void addItemComment(String userId, String itemId, String content, Integer rating);
 

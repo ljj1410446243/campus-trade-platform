@@ -79,6 +79,8 @@ public class SearchItemResponse {
     private Integer conditionStar;
     private String coverImage;
     private Integer hotScore;
+    private LocationDTO location;
+    private Double distanceMeters;
     private SellerInfo seller;
 
     public String getItemId() {
@@ -127,6 +129,22 @@ public class SearchItemResponse {
 
     public void setHotScore(Integer hotScore) {
         this.hotScore = hotScore;
+    }
+
+    public LocationDTO getLocation() {
+        return location;
+    }
+
+    public void setLocation(LocationDTO location) {
+        this.location = location;
+    }
+
+    public Double getDistanceMeters() {
+        return distanceMeters;
+    }
+
+    public void setDistanceMeters(Double distanceMeters) {
+        this.distanceMeters = distanceMeters;
     }
 
     public SellerInfo getSeller() {

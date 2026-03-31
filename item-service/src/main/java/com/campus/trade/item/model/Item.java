@@ -49,6 +49,10 @@ public class Item {
     public static class Location {
         private Double lat;
         private Double lng;
+        private String address;
+        private String poiName;
+        private String coordType;
+        private String source;
 
         public Double getLat() {
             return lat;
@@ -64,6 +68,38 @@ public class Item {
 
         public void setLng(Double lng) {
             this.lng = lng;
+        }
+
+        public String getAddress() {
+            return address;
+        }
+
+        public void setAddress(String address) {
+            this.address = address;
+        }
+
+        public String getPoiName() {
+            return poiName;
+        }
+
+        public void setPoiName(String poiName) {
+            this.poiName = poiName;
+        }
+
+        public String getCoordType() {
+            return coordType;
+        }
+
+        public void setCoordType(String coordType) {
+            this.coordType = coordType;
+        }
+
+        public String getSource() {
+            return source;
+        }
+
+        public void setSource(String source) {
+            this.source = source;
         }
     }
 

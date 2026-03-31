@@ -19,3 +19,8 @@ app:
       - http://127.0.0.1:3000
       - http://localhost:5173
       - http://127.0.0.1:5173
+  location:
+    request-timeout: 3s
+    amap:
+      base-url: https://restapi.amap.com
+      key: d027d7437e22c3e0ff369249bde56e21

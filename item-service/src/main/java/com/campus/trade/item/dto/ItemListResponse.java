@@ -13,6 +13,8 @@ public class ItemListResponse {
     private List<String> images;
     private String coverImage;
     private String status;
+    private LocationDTO location;
+    private Double distanceMeters;
     private Date createdAt;
 
     public String getItemId() {
@@ -69,6 +71,22 @@ public class ItemListResponse {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public LocationDTO getLocation() {
+        return location;
+    }
+
+    public void setLocation(LocationDTO location) {
+        this.location = location;
+    }
+
+    public Double getDistanceMeters() {
+        return distanceMeters;
+    }
+
+    public void setDistanceMeters(Double distanceMeters) {
+        this.distanceMeters = distanceMeters;
     }
 
     public Date getCreatedAt() {
