@@ -7,6 +7,8 @@ import java.util.List;
 
 public interface ReviewRepository extends MongoRepository<Review, String> {
 
+    List<Review> findByToUserId(String toUserId);
+
     List<Review> findByToUserIdOrderByCreatedAtDesc(String toUserId);
 
     boolean existsByTradeIdAndFromUserId(String tradeId, String fromUserId);

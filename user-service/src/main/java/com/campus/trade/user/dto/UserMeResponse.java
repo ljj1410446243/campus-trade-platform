@@ -11,19 +11,26 @@ public class UserMeResponse {
   private String avatarUrl;
   private Boolean campusVerified;
   private Integer creditScore;
+  private String creditLevel;
+  private Integer reviewCount;
+  private Double averageRating;
   private String role;
 
   public UserMeResponse() {
   }
 
   public UserMeResponse(String userId, String username, String nickname, String avatarUrl,
-                        Boolean campusVerified, Integer creditScore, String role) {
+                        Boolean campusVerified, Integer creditScore, String creditLevel,
+                        Integer reviewCount, Double averageRating, String role) {
     this.userId = userId;
     this.username = username;
     this.nickname = nickname;
     this.avatarUrl = avatarUrl;
     this.campusVerified = campusVerified;
     this.creditScore = creditScore;
+    this.creditLevel = creditLevel;
+    this.reviewCount = reviewCount;
+    this.averageRating = averageRating;
     this.role = role;
   }
 
@@ -73,6 +80,30 @@ public class UserMeResponse {
 
   public void setCreditScore(Integer creditScore) {
     this.creditScore = creditScore;
+  }
+
+  public String getCreditLevel() {
+    return creditLevel;
+  }
+
+  public void setCreditLevel(String creditLevel) {
+    this.creditLevel = creditLevel;
+  }
+
+  public Integer getReviewCount() {
+    return reviewCount;
+  }
+
+  public void setReviewCount(Integer reviewCount) {
+    this.reviewCount = reviewCount;
+  }
+
+  public Double getAverageRating() {
+    return averageRating;
+  }
+
+  public void setAverageRating(Double averageRating) {
+    this.averageRating = averageRating;
   }
 
   public String getRole() {

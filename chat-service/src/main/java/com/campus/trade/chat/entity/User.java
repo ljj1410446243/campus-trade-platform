@@ -14,4 +14,8 @@ public class User {
     private String username;
     private String nickname;
     private String avatarUrl;
+    private Integer creditScore;
+    private String creditLevel;
+    private Integer reviewCount;
+    private Double averageRating;
 }

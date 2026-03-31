@@ -24,12 +24,20 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 @Service
 public class ItemServiceImpl implements ItemService {
+
+    private static final int DEFAULT_CREDIT_SCORE = 0;
+    private static final int DEFAULT_REVIEW_COUNT = 0;
+    private static final double DEFAULT_AVERAGE_RATING = 0D;
+    private static final String DEFAULT_CREDIT_LEVEL = "NEW";
 
     private final ItemRepository itemRepository;
     private final ItemCommentRepository itemCommentRepository;
@@ -241,8 +249,9 @@ public class ItemServiceImpl implements ItemService {
         query.with(PageRequest.of(safePage - 1, safePageSize));
 
         List<Item> items = mongoTemplate.find(query, Item.class);
+        Map<String, User> sellerCache = new HashMap<>();
         List<SearchItemResponse> list = items.stream()
-                .map(this::toSearchResponse)
+                .map(item -> toSearchResponse(item, sellerCache))
                 .toList();
 
         return new SearchItemPageResponse(list, total);
@@ -257,18 +266,21 @@ public class ItemServiceImpl implements ItemService {
         query.addCriteria(Criteria.where("status").is("ON_SALE"));
 
         long total = mongoTemplate.count(query, Item.class);
-
-        Sort mongoSort = Sort.by(Sort.Direction.DESC, "stats.viewCount")
-                .and(Sort.by(Sort.Direction.DESC, "stats.favoriteCount"))
-                .and(Sort.by(Sort.Direction.DESC, "stats.chatCount"))
-                .and(Sort.by(Sort.Direction.DESC, "createdAt"));
-
-        query.with(mongoSort);
-        query.with(PageRequest.of(safePage - 1, safePageSize));
-
         List<Item> items = mongoTemplate.find(query, Item.class);
-        List<SearchItemResponse> list = items.stream()
-                .map(this::toSearchResponse)
+        Map<String, User> sellerCache = new HashMap<>();
+
+        List<Item> sortedItems = items.stream()
+                .sorted(Comparator
+                        .comparingInt((Item item) -> buildRecommendScore(item, findSeller(item.getSellerId(), sellerCache)))
+                        .reversed()
+                        .thenComparing(Item::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .toList();
+
+        int fromIndex = Math.min((safePage - 1) * safePageSize, sortedItems.size());
+        int toIndex = Math.min(fromIndex + safePageSize, sortedItems.size());
+
+        List<SearchItemResponse> list = sortedItems.subList(fromIndex, toIndex).stream()
+                .map(item -> toSearchResponse(item, sellerCache))
                 .toList();
 
         return new SearchItemPageResponse(list, total);
@@ -350,7 +362,7 @@ public class ItemServiceImpl implements ItemService {
         return response;
     }
 
-    private SearchItemResponse toSearchResponse(Item item) {
+    private SearchItemResponse toSearchResponse(Item item, Map<String, User> sellerCache) {
         SearchItemResponse response = new SearchItemResponse();
         response.setItemId(item.getId());
         response.setTitle(item.getTitle());
@@ -358,14 +370,8 @@ public class ItemServiceImpl implements ItemService {
         response.setConditionStar(item.getConditionStar());
 
         response.setCoverImage(resolveCoverImage(item.getImages(), item.getCoverImage()));
-
-        int hotScore = 0;
-        if (item.getStats() != null) {
-            hotScore += item.getStats().getViewCount() == null ? 0 : item.getStats().getViewCount();
-            hotScore += item.getStats().getFavoriteCount() == null ? 0 : item.getStats().getFavoriteCount();
-            hotScore += item.getStats().getChatCount() == null ? 0 : item.getStats().getChatCount();
-        }
-        response.setHotScore(hotScore);
+        response.setHotScore(resolveHotScore(item));
+        response.setSeller(buildSearchSellerInfo(item.getSellerId(), sellerCache));
 
         return response;
     }
@@ -396,7 +402,18 @@ public class ItemServiceImpl implements ItemService {
         userRepository.findById(sellerId).ifPresent(user -> {
             sellerInfo.setNickname(resolveDisplayName(user));
             sellerInfo.setAvatarUrl(user.getAvatarUrl());
+            sellerInfo.setCreditScore(resolveCreditScore(user));
+            sellerInfo.setCreditLevel(resolveCreditLevel(user));
+            sellerInfo.setReviewCount(resolveReviewCount(user));
+            sellerInfo.setAverageRating(resolveAverageRating(user));
         });
+
+        if (sellerInfo.getCreditScore() == null) {
+            sellerInfo.setCreditScore(DEFAULT_CREDIT_SCORE);
+            sellerInfo.setCreditLevel(DEFAULT_CREDIT_LEVEL);
+            sellerInfo.setReviewCount(DEFAULT_REVIEW_COUNT);
+            sellerInfo.setAverageRating(DEFAULT_AVERAGE_RATING);
+        }
 
         return sellerInfo;
     }
@@ -432,5 +449,72 @@ public class ItemServiceImpl implements ItemService {
             return user.getUsername();
         }
         return user.getId();
+    }
+
+    private SearchItemResponse.SellerInfo buildSearchSellerInfo(String sellerId, Map<String, User> sellerCache) {
+        SearchItemResponse.SellerInfo sellerInfo = new SearchItemResponse.SellerInfo();
+        sellerInfo.setUserId(sellerId);
+
+        User seller = findSeller(sellerId, sellerCache);
+        if (seller == null) {
+            sellerInfo.setCreditScore(DEFAULT_CREDIT_SCORE);
+            sellerInfo.setCreditLevel(DEFAULT_CREDIT_LEVEL);
+            sellerInfo.setReviewCount(DEFAULT_REVIEW_COUNT);
+            sellerInfo.setAverageRating(DEFAULT_AVERAGE_RATING);
+            return sellerInfo;
+        }
+
+        sellerInfo.setNickname(resolveDisplayName(seller));
+        sellerInfo.setAvatarUrl(seller.getAvatarUrl());
+        sellerInfo.setCreditScore(resolveCreditScore(seller));
+        sellerInfo.setCreditLevel(resolveCreditLevel(seller));
+        sellerInfo.setReviewCount(resolveReviewCount(seller));
+        sellerInfo.setAverageRating(resolveAverageRating(seller));
+        return sellerInfo;
+    }
+
+    private User findSeller(String sellerId, Map<String, User> sellerCache) {
+        if (sellerCache.containsKey(sellerId)) {
+            return sellerCache.get(sellerId);
+        }
+
+        User seller = userRepository.findById(sellerId).orElse(null);
+        sellerCache.put(sellerId, seller);
+        return seller;
+    }
+
+    private int resolveHotScore(Item item) {
+        int hotScore = 0;
+        if (item.getStats() != null) {
+            hotScore += item.getStats().getViewCount() == null ? 0 : item.getStats().getViewCount();
+            hotScore += item.getStats().getFavoriteCount() == null ? 0 : item.getStats().getFavoriteCount();
+            hotScore += item.getStats().getChatCount() == null ? 0 : item.getStats().getChatCount();
+        }
+        return hotScore;
+    }
+
+    private int buildRecommendScore(Item item, User seller) {
+        int hotComponent = Math.min(100, resolveHotScore(item));
+        int creditScore = seller == null ? DEFAULT_CREDIT_SCORE : resolveCreditScore(seller);
+        return (int) Math.round(hotComponent * 0.7 + creditScore * 0.3);
+    }
+
+    private Integer resolveCreditScore(User user) {
+        return user.getCreditScore() == null ? DEFAULT_CREDIT_SCORE : user.getCreditScore();
+    }
+
+    private String resolveCreditLevel(User user) {
+        if (user.getCreditLevel() == null || user.getCreditLevel().isBlank()) {
+            return DEFAULT_CREDIT_LEVEL;
+        }
+        return user.getCreditLevel();
+    }
+
+    private Integer resolveReviewCount(User user) {
+        return user.getReviewCount() == null ? DEFAULT_REVIEW_COUNT : user.getReviewCount();
+    }
+
+    private Double resolveAverageRating(User user) {
+        return user.getAverageRating() == null ? DEFAULT_AVERAGE_RATING : user.getAverageRating();
     }
 }

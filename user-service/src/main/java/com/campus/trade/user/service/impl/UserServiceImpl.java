@@ -28,6 +28,11 @@ import java.util.Map;
 @Service
 public class UserServiceImpl implements UserService {
 
+    private static final int DEFAULT_CREDIT_SCORE = 0;
+    private static final int DEFAULT_REVIEW_COUNT = 0;
+    private static final double DEFAULT_AVERAGE_RATING = 0D;
+    private static final String DEFAULT_CREDIT_LEVEL = "NEW";
+
     private final UserRepository userRepository;
     private final FavoriteRepository favoriteRepository;
     private final BrowseHistoryRepository browseHistoryRepository;
@@ -89,7 +94,10 @@ public class UserServiceImpl implements UserService {
                 user.getNickname(),
                 user.getAvatarUrl(),
                 user.isCampusVerified(),
-                0,
+                resolveCreditScore(user),
+                resolveCreditLevel(user),
+                resolveReviewCount(user),
+                resolveAverageRating(user),
                 user.getRole()
         );
     }
@@ -167,5 +175,24 @@ public class UserServiceImpl implements UserService {
         Item item = itemRepository.findById(itemId).orElse(null);
         itemCache.put(itemId, item);
         return item;
+    }
+
+    private Integer resolveCreditScore(User user) {
+        return user.getCreditScore() == null ? DEFAULT_CREDIT_SCORE : user.getCreditScore();
+    }
+
+    private String resolveCreditLevel(User user) {
+        if (user.getCreditLevel() == null || user.getCreditLevel().isBlank()) {
+            return DEFAULT_CREDIT_LEVEL;
+        }
+        return user.getCreditLevel();
+    }
+
+    private Integer resolveReviewCount(User user) {
+        return user.getReviewCount() == null ? DEFAULT_REVIEW_COUNT : user.getReviewCount();
+    }
+
+    private Double resolveAverageRating(User user) {
+        return user.getAverageRating() == null ? DEFAULT_AVERAGE_RATING : user.getAverageRating();
     }
 }
