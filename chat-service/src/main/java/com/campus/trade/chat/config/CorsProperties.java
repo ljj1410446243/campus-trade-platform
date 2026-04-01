@@ -1,0 +1,29 @@
+package com.campus.trade.chat.config;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+@Component
+@ConfigurationProperties(prefix = "app.cors")
+public class CorsProperties {
+
+  private List<String> allowedOrigins = new ArrayList<>();
+
+  public List<String> getAllowedOrigins() {
+    return allowedOrigins;
+  }
+
+  public void setAllowedOrigins(List<String> allowedOrigins) {
+    this.allowedOrigins = allowedOrigins == null
+            ? new ArrayList<>()
+            : allowedOrigins.stream()
+                    .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .filter(origin -> !origin.isEmpty())
+                    .toList();
+  }
+}

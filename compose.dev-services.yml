@@ -1,0 +1,111 @@
+name: campus-market-dev-services
+
+x-service-common: &service-common
+  restart: unless-stopped
+  networks:
+    - campus-market-dev
+  environment: &common-env
+    SPRING_DATA_MONGODB_URI: ${SPRING_DATA_MONGODB_URI:-mongodb://mongo:27017/campus_trade}
+    SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-redis}
+    SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
+    SPRING_DATA_REDIS_PASSWORD: ${SPRING_DATA_REDIS_PASSWORD:-}
+    JWT_SECRET: ${JWT_SECRET}
+    APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173}
+
+services:
+  auth-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${AUTH_SERVER_PORT:-8081}
+      AUTH_REFRESH_TOKEN_EXPIRATION: ${AUTH_REFRESH_TOKEN_EXPIRATION:-1209600}
+      AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME:-refreshToken}
+      AUTH_COOKIE_PATH: ${AUTH_COOKIE_PATH:-/auth}
+      AUTH_COOKIE_DOMAIN: ${AUTH_COOKIE_DOMAIN:-}
+      AUTH_COOKIE_SAME_SITE: ${AUTH_COOKIE_SAME_SITE:-Lax}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+      AUTH_COOKIE_MAX_AGE: ${AUTH_COOKIE_MAX_AGE:-1209600}
+    expose:
+      - "${AUTH_SERVER_PORT:-8081}"
+
+  user-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${USER_SERVER_PORT:-8082}
+    expose:
+      - "${USER_SERVER_PORT:-8082}"
+
+  item-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: item-service/Dockerfile
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${ITEM_SERVER_PORT:-8083}
+      APP_LOCATION_AMAP_BASE_URL: ${APP_LOCATION_AMAP_BASE_URL:-https://restapi.amap.com}
+      APP_LOCATION_AMAP_KEY: ${APP_LOCATION_AMAP_KEY:-}
+    expose:
+      - "${ITEM_SERVER_PORT:-8083}"
+
+  trade-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: trade-service/Dockerfile
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${TRADE_SERVER_PORT:-8084}
+    expose:
+      - "${TRADE_SERVER_PORT:-8084}"
+
+  chat-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: chat-service/Dockerfile
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${CHAT_SERVER_PORT:-8085}
+      JWT_EXPIRATION: ${CHAT_JWT_EXPIRATION:-7200000}
+    expose:
+      - "${CHAT_SERVER_PORT:-8085}"
+
+  review-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: review-service/Dockerfile
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${REVIEW_SERVER_PORT:-8086}
+      JWT_EXPIRATION: ${REVIEW_JWT_EXPIRATION:-900}
+    expose:
+      - "${REVIEW_SERVER_PORT:-8086}"
+
+  file-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: file-service/Dockerfile
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${FILE_SERVER_PORT:-8087}
+      APP_UPLOAD_DIR: ${APP_UPLOAD_DIR:-/opt/campus-market/dev/uploads}
+      APP_PUBLIC_BASE_URL: ${APP_PUBLIC_BASE_URL:-http://124.220.215.204}
+    volumes:
+      - ${APP_UPLOAD_DIR:-/opt/campus-market/dev/uploads}:${APP_UPLOAD_DIR:-/opt/campus-market/dev/uploads}
+    expose:
+      - "${FILE_SERVER_PORT:-8087}"
+
+networks:
+  campus-market-dev:
+    external: true
+    name: ${DEV_DOCKER_NETWORK:-campus-market-dev}
