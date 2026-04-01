@@ -1,5 +1,5 @@
 server:
-  port: 8083
+  port: ${SERVER_PORT:8083}
 
 spring:
   application:
@@ -7,20 +7,20 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://localhost:27017/campus_trade
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://127.0.0.1:27017/campus_trade}
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:127.0.0.1}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
 
 jwt:
-  secret: campusTradeSecretKeyCampusTradeSecretKey123456
+  secret: ${JWT_SECRET:local-dev-jwt-secret-local-dev-jwt-secret-1234567890}
 
 app:
   cors:
-    allowed-origins:
-      - http://localhost:3000
-      - http://127.0.0.1:3000
-      - http://localhost:5173
-      - http://127.0.0.1:5173
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173}
   location:
     request-timeout: 3s
     amap:
-      base-url: https://restapi.amap.com
-      key: d027d7437e22c3e0ff369249bde56e21
+      base-url: ${APP_LOCATION_AMAP_BASE_URL:https://restapi.amap.com}
+      key: ${APP_LOCATION_AMAP_KEY:}

@@ -4,6 +4,7 @@ import com.campus.trade.file.config.FileStorageProperties;
 import com.campus.trade.file.exception.BusinessException;
 import com.campus.trade.file.service.StorageService;
 import com.campus.trade.file.service.StoredFileInfo;
+import com.campus.trade.file.util.FileBizType;
 import com.campus.trade.file.util.FileConstants;
 import com.campus.trade.file.util.FileExtensionUtil;
 import org.springframework.core.io.Resource;
@@ -29,7 +30,7 @@ public class LocalStorageService implements StorageService {
     private final Path rootPath;
 
     public LocalStorageService(FileStorageProperties fileStorageProperties) {
-        this.rootPath = Paths.get(fileStorageProperties.getRootDir()).toAbsolutePath().normalize();
+        this.rootPath = Paths.get(fileStorageProperties.getUploadDir()).toAbsolutePath().normalize();
     }
 
     @Override
@@ -37,8 +38,9 @@ public class LocalStorageService implements StorageService {
         String ext = FileExtensionUtil.resolveExtension(file);
         String datePath = DATE_FORMATTER.format(LocalDate.now());
         String storedFileName = UUID.randomUUID() + "." + ext;
-        String relativePath = bizType.toLowerCase() + "/" + datePath + "/" + storedFileName;
+        String relativePath = FileBizType.resolveStorageDir(bizType) + "/" + datePath + "/" + storedFileName;
         Path targetPath = rootPath.resolve(relativePath).normalize();
+        validateTargetPath(targetPath);
 
         try {
             Files.createDirectories(targetPath.getParent());
@@ -56,6 +58,7 @@ public class LocalStorageService implements StorageService {
     public Resource loadAsResource(String storagePath) {
         try {
             Path filePath = rootPath.resolve(storagePath).normalize();
+            validateTargetPath(filePath);
             Resource resource = new UrlResource(filePath.toUri());
             if (!resource.exists() || !resource.isReadable()) {
                 throw new BusinessException(404, "文件不存在");
@@ -69,9 +72,17 @@ public class LocalStorageService implements StorageService {
     @Override
     public void delete(String storagePath) {
         try {
-            Files.deleteIfExists(rootPath.resolve(storagePath).normalize());
+            Path filePath = rootPath.resolve(storagePath).normalize();
+            validateTargetPath(filePath);
+            Files.deleteIfExists(filePath);
         } catch (IOException e) {
             throw new BusinessException(500, "文件删除失败");
+        }
+    }
+
+    private void validateTargetPath(Path targetPath) {
+        if (!targetPath.startsWith(rootPath)) {
+            throw new BusinessException(400, "文件路径非法");
         }
     }
 }

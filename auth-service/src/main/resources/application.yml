@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: ${SERVER_PORT:8081}
 
 spring:
   application:
@@ -7,26 +7,27 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://localhost:27017/campus_trade
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://127.0.0.1:27017/campus_trade}
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:127.0.0.1}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
 
 jwt:
-  secret: campusTradeSecretKeyCampusTradeSecretKey123456
-  access-token-expiration: 900
+  secret: ${JWT_SECRET:local-dev-jwt-secret-local-dev-jwt-secret-1234567890}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900}
 
 auth:
   refresh-token:
-    expiration: 1209600
+    expiration: ${AUTH_REFRESH_TOKEN_EXPIRATION:1209600}
   cookie:
-    name: refreshToken
-    path: /auth
-    same-site: Lax
-    secure: false
-    max-age: 1209600
+    name: ${AUTH_COOKIE_NAME:refreshToken}
+    path: ${AUTH_COOKIE_PATH:/auth}
+    domain: ${AUTH_COOKIE_DOMAIN:}
+    same-site: ${AUTH_COOKIE_SAME_SITE:Lax}
+    secure: ${AUTH_COOKIE_SECURE:false}
+    max-age: ${AUTH_COOKIE_MAX_AGE:1209600}
 
 app:
   cors:
-    allowed-origins:
-      - http://localhost:3000
-      - http://127.0.0.1:3000
-      - http://localhost:5173
-      - http://127.0.0.1:5173
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173}

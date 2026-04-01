@@ -9,6 +9,7 @@ public class RefreshCookieProperties {
 
   private String name = "refreshToken";
   private String path = "/auth";
+  private String domain;
   private String sameSite = "Lax";
   private boolean secure = false;
   private long maxAge = 1209600;
@@ -27,6 +28,14 @@ public class RefreshCookieProperties {
 
   public void setPath(String path) {
     this.path = path;
+  }
+
+  public String getDomain() {
+    return domain;
+  }
+
+  public void setDomain(String domain) {
+    this.domain = domain;
   }
 
   public String getSameSite() {

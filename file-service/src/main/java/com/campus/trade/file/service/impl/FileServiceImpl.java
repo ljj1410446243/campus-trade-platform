@@ -136,7 +136,7 @@ public class FileServiceImpl implements FileService {
         fileDocument.setUpdatedAt(now);
 
         FileDocument saved = fileRepository.save(fileDocument);
-        saved.setUrl(buildFileUrl(saved.getId()));
+        saved.setUrl(buildFileUrl(saved.getStoragePath()));
         saved.setUpdatedAt(new Date());
         return fileRepository.save(saved);
     }
@@ -189,8 +189,12 @@ public class FileServiceImpl implements FileService {
         }
     }
 
-    private String buildFileUrl(String fileId) {
-        return fileStorageProperties.getPublicBaseUrl() + "/files/view/" + fileId;
+    private String buildFileUrl(String storagePath) {
+        String normalizedBaseUrl = fileStorageProperties.getPublicBaseUrl();
+        if (normalizedBaseUrl.endsWith("/")) {
+            normalizedBaseUrl = normalizedBaseUrl.substring(0, normalizedBaseUrl.length() - 1);
+        }
+        return normalizedBaseUrl + "/uploads/" + storagePath;
     }
 
     private String buildViewFileName(FileDocument fileDocument) {

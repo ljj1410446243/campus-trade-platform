@@ -39,4 +39,13 @@ public final class FileBizType {
         }
         return 9;
     }
+
+    public static String resolveStorageDir(String bizType) {
+        return switch (normalize(bizType)) {
+            case ITEM_IMAGE -> "items";
+            case AVATAR -> "avatars";
+            case CHAT_IMAGE -> "chat";
+            default -> throw new BusinessException("bizType不支持");
+        };
+    }
 }

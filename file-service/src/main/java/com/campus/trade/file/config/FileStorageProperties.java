@@ -4,18 +4,18 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConfigurationProperties(prefix = "app.file")
+@ConfigurationProperties(prefix = "app")
 public class FileStorageProperties {
 
-    private String rootDir = "./data/files";
-    private String publicBaseUrl = "http://localhost:8087";
+    private String uploadDir = "./data/files";
+    private String publicBaseUrl = "http://127.0.0.1:8087";
 
-    public String getRootDir() {
-        return rootDir;
+    public String getUploadDir() {
+        return uploadDir;
     }
 
-    public void setRootDir(String rootDir) {
-        this.rootDir = rootDir;
+    public void setUploadDir(String uploadDir) {
+        this.uploadDir = uploadDir;
     }
 
     public String getPublicBaseUrl() {

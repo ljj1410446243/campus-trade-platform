@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Component
 public class RefreshTokenCookieManager {
@@ -18,24 +19,30 @@ public class RefreshTokenCookieManager {
   }
 
   public void writeCookie(HttpServletResponse response, String token) {
-    ResponseCookie cookie = ResponseCookie.from(refreshCookieProperties.getName(), token)
+    ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(refreshCookieProperties.getName(), token)
             .httpOnly(true)
             .secure(refreshCookieProperties.isSecure())
             .path(refreshCookieProperties.getPath())
             .sameSite(refreshCookieProperties.getSameSite())
-            .maxAge(refreshCookieProperties.getMaxAge())
-            .build();
+            .maxAge(refreshCookieProperties.getMaxAge());
+    if (StringUtils.hasText(refreshCookieProperties.getDomain())) {
+      builder.domain(refreshCookieProperties.getDomain());
+    }
+    ResponseCookie cookie = builder.build();
     response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
   }
 
   public void clearCookie(HttpServletResponse response) {
-    ResponseCookie cookie = ResponseCookie.from(refreshCookieProperties.getName(), "")
+    ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(refreshCookieProperties.getName(), "")
             .httpOnly(true)
             .secure(refreshCookieProperties.isSecure())
             .path(refreshCookieProperties.getPath())
             .sameSite(refreshCookieProperties.getSameSite())
-            .maxAge(0)
-            .build();
+            .maxAge(0);
+    if (StringUtils.hasText(refreshCookieProperties.getDomain())) {
+      builder.domain(refreshCookieProperties.getDomain());
+    }
+    ResponseCookie cookie = builder.build();
     response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
   }
 
