@@ -4,6 +4,7 @@ import com.campus.trade.item.dto.CreateItemRequest;
 import com.campus.trade.item.dto.ItemCommentResponse;
 import com.campus.trade.item.dto.ItemDetailResponse;
 import com.campus.trade.item.dto.ItemListResponse;
+import com.campus.trade.item.dto.LocationDTO;
 import com.campus.trade.item.dto.SearchItemPageResponse;
 import com.campus.trade.item.dto.SearchItemResponse;
 import com.campus.trade.item.dto.UpdateItemRequest;
@@ -15,8 +16,8 @@ import com.campus.trade.item.repository.ItemCommentRepository;
 import com.campus.trade.item.repository.ItemRepository;
 import com.campus.trade.item.repository.UserRepository;
 import com.campus.trade.item.service.ItemService;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import com.campus.trade.item.util.CoordinateTransformUtil;
+import com.campus.trade.item.util.DistanceUtil;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -28,6 +29,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -38,6 +40,13 @@ public class ItemServiceImpl implements ItemService {
     private static final int DEFAULT_REVIEW_COUNT = 0;
     private static final double DEFAULT_AVERAGE_RATING = 0D;
     private static final String DEFAULT_CREDIT_LEVEL = "NEW";
+    private static final String STATUS_ON_SALE = "ON_SALE";
+    private static final String STATUS_SOLD = "SOLD";
+    private static final String STATUS_OFF_SHELF = "OFF_SHELF";
+    private static final String COORD_TYPE_WGS84 = "WGS84";
+    private static final String COORD_TYPE_GCJ02 = "GCJ02";
+    private static final String DEFAULT_LOCATION_SOURCE = "manual";
+    private static final String SORT_BY_DISTANCE = "distance";
 
     private final ItemRepository itemRepository;
     private final ItemCommentRepository itemCommentRepository;
@@ -74,14 +83,8 @@ public class ItemServiceImpl implements ItemService {
         item.setCoverImage(resolveCoverImage(images));
         item.setTradeMode(request.getTradeMode());
         item.setExpireAt(request.getExpireAt());
-        item.setStatus("ON_SALE");
-
-        if (request.getLocation() != null) {
-            Item.Location location = new Item.Location();
-            location.setLat(request.getLocation().getLat());
-            location.setLng(request.getLocation().getLng());
-            item.setLocation(location);
-        }
+        item.setStatus(STATUS_ON_SALE);
+        item.setLocation(normalizeLocation(request.getLocation()));
 
         Item.Stats stats = new Item.Stats();
         stats.setViewCount(0);
@@ -102,7 +105,7 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new BusinessException("商品不存在"));
 
-        return toDetailResponse(item);
+        return toDetailResponse(item, null);
     }
 
     @Override
@@ -120,11 +123,11 @@ public class ItemServiceImpl implements ItemService {
 
         validateOwner(sellerId, item);
 
-        if ("SOLD".equals(item.getStatus())) {
+        if (STATUS_SOLD.equals(item.getStatus())) {
             throw new BusinessException("已售出商品不可编辑");
         }
 
-        if ("OFF_SHELF".equals(item.getStatus())) {
+        if (STATUS_OFF_SHELF.equals(item.getStatus())) {
             throw new BusinessException("已下架商品不可编辑");
         }
 
@@ -139,20 +142,11 @@ public class ItemServiceImpl implements ItemService {
         List<String> images = normalizeImages(request.getImages());
         item.setImages(images);
         item.setCoverImage(resolveCoverImage(images));
-
-        if (request.getLocation() != null) {
-            Item.Location location = new Item.Location();
-            location.setLat(request.getLocation().getLat());
-            location.setLng(request.getLocation().getLng());
-            item.setLocation(location);
-        } else {
-            item.setLocation(null);
-        }
-
+        item.setLocation(normalizeLocation(request.getLocation()));
         item.setUpdatedAt(new Date());
 
         Item saved = itemRepository.save(item);
-        return toDetailResponse(saved);
+        return toDetailResponse(saved, null);
     }
 
     @Override
@@ -162,17 +156,16 @@ public class ItemServiceImpl implements ItemService {
 
         validateOwner(sellerId, item);
 
-        if ("OFF_SHELF".equals(item.getStatus())) {
+        if (STATUS_OFF_SHELF.equals(item.getStatus())) {
             throw new BusinessException("商品已下架");
         }
 
-        if ("SOLD".equals(item.getStatus())) {
+        if (STATUS_SOLD.equals(item.getStatus())) {
             throw new BusinessException("已售出商品不可下架");
         }
 
-        item.setStatus("OFF_SHELF");
+        item.setStatus(STATUS_OFF_SHELF);
         item.setUpdatedAt(new Date());
-
         itemRepository.save(item);
     }
 
@@ -184,15 +177,18 @@ public class ItemServiceImpl implements ItemService {
                                               Integer minCondition,
                                               Integer maxCondition,
                                               String sort,
+                                              Double lat,
+                                              Double lng,
+                                              Integer radiusMeters,
+                                              String sortBy,
                                               Integer page,
                                               Integer pageSize) {
-
         int safePage = (page == null || page < 1) ? 1 : page;
         int safePageSize = (pageSize == null || pageSize < 1) ? 10 : pageSize;
 
         Query query = new Query();
         List<Criteria> criteriaList = new ArrayList<>();
-        criteriaList.add(Criteria.where("status").is("ON_SALE"));
+        criteriaList.add(Criteria.where("status").is(STATUS_ON_SALE));
 
         if (q != null && !q.isBlank()) {
             String escaped = Pattern.quote(q.trim());
@@ -232,58 +228,51 @@ public class ItemServiceImpl implements ItemService {
 
         query.addCriteria(new Criteria().andOperator(criteriaList.toArray(new Criteria[0])));
 
-        long total = mongoTemplate.count(query, Item.class);
-
-        Sort mongoSort;
-        if ("PRICE".equalsIgnoreCase(sort)) {
-            mongoSort = Sort.by(Sort.Direction.ASC, "price");
-        } else if ("HOT".equalsIgnoreCase(sort)) {
-            mongoSort = Sort.by(Sort.Direction.DESC, "stats.viewCount")
-                    .and(Sort.by(Sort.Direction.DESC, "stats.favoriteCount"))
-                    .and(Sort.by(Sort.Direction.DESC, "stats.chatCount"));
-        } else {
-            mongoSort = Sort.by(Sort.Direction.DESC, "createdAt");
-        }
-
-        query.with(mongoSort);
-        query.with(PageRequest.of(safePage - 1, safePageSize));
-
-        List<Item> items = mongoTemplate.find(query, Item.class);
+        RequestLocation requestLocation = normalizeRequestLocation(lat, lng);
         Map<String, User> sellerCache = new HashMap<>();
-        List<SearchItemResponse> list = items.stream()
-                .map(item -> toSearchResponse(item, sellerCache))
+        List<ItemDistanceView> processedItems = mongoTemplate.find(query, Item.class).stream()
+                .map(item -> buildItemDistanceView(item, requestLocation, sellerCache))
+                .filter(view -> matchesRadius(view, radiusMeters, requestLocation))
+                .sorted(buildSearchComparator(sort, sortBy, requestLocation))
                 .toList();
 
-        return new SearchItemPageResponse(list, total);
+        int fromIndex = Math.min((safePage - 1) * safePageSize, processedItems.size());
+        int toIndex = Math.min(fromIndex + safePageSize, processedItems.size());
+        List<SearchItemResponse> list = processedItems.subList(fromIndex, toIndex).stream()
+                .map(view -> toSearchResponse(view, sellerCache))
+                .toList();
+
+        return new SearchItemPageResponse(list, processedItems.size());
     }
 
     @Override
-    public SearchItemPageResponse recommendItems(Integer page, Integer pageSize) {
+    public SearchItemPageResponse recommendItems(Double lat,
+                                                 Double lng,
+                                                 Integer radiusMeters,
+                                                 String sortBy,
+                                                 Integer page,
+                                                 Integer pageSize) {
         int safePage = (page == null || page < 1) ? 1 : page;
         int safePageSize = (pageSize == null || pageSize < 1) ? 10 : pageSize;
 
         Query query = new Query();
-        query.addCriteria(Criteria.where("status").is("ON_SALE"));
+        query.addCriteria(Criteria.where("status").is(STATUS_ON_SALE));
 
-        long total = mongoTemplate.count(query, Item.class);
-        List<Item> items = mongoTemplate.find(query, Item.class);
+        RequestLocation requestLocation = normalizeRequestLocation(lat, lng);
         Map<String, User> sellerCache = new HashMap<>();
-
-        List<Item> sortedItems = items.stream()
-                .sorted(Comparator
-                        .comparingInt((Item item) -> buildRecommendScore(item, findSeller(item.getSellerId(), sellerCache)))
-                        .reversed()
-                        .thenComparing(Item::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+        List<ItemDistanceView> processedItems = mongoTemplate.find(query, Item.class).stream()
+                .map(item -> buildItemDistanceView(item, requestLocation, sellerCache))
+                .filter(view -> matchesRadius(view, radiusMeters, requestLocation))
+                .sorted(buildRecommendComparator(sortBy, requestLocation))
                 .toList();
 
-        int fromIndex = Math.min((safePage - 1) * safePageSize, sortedItems.size());
-        int toIndex = Math.min(fromIndex + safePageSize, sortedItems.size());
-
-        List<SearchItemResponse> list = sortedItems.subList(fromIndex, toIndex).stream()
-                .map(item -> toSearchResponse(item, sellerCache))
+        int fromIndex = Math.min((safePage - 1) * safePageSize, processedItems.size());
+        int toIndex = Math.min(fromIndex + safePageSize, processedItems.size());
+        List<SearchItemResponse> list = processedItems.subList(fromIndex, toIndex).stream()
+                .map(view -> toSearchResponse(view, sellerCache))
                 .toList();
 
-        return new SearchItemPageResponse(list, total);
+        return new SearchItemPageResponse(list, processedItems.size());
     }
 
     @Override
@@ -323,7 +312,7 @@ public class ItemServiceImpl implements ItemService {
         }
     }
 
-    private ItemDetailResponse toDetailResponse(Item item) {
+    private ItemDetailResponse toDetailResponse(Item item, Double distanceMeters) {
         ItemDetailResponse response = new ItemDetailResponse();
         response.setItemId(item.getId());
         response.setSellerId(item.getSellerId());
@@ -340,12 +329,7 @@ public class ItemServiceImpl implements ItemService {
         response.setCreatedAt(item.getCreatedAt());
         response.setSeller(buildSellerInfo(item.getSellerId()));
         response.setStats(buildStatsInfo(item.getStats()));
-
-        if (item.getLocation() != null) {
-            response.setLat(item.getLocation().getLat());
-            response.setLng(item.getLocation().getLng());
-        }
-
+        applyLocation(response, item.getLocation(), distanceMeters);
         return response;
     }
 
@@ -358,22 +342,213 @@ public class ItemServiceImpl implements ItemService {
         response.setImages(item.getImages());
         response.setCoverImage(item.getCoverImage());
         response.setStatus(item.getStatus());
+        response.setLocation(toLocationDto(item.getLocation()));
         response.setCreatedAt(item.getCreatedAt());
         return response;
     }
 
-    private SearchItemResponse toSearchResponse(Item item, Map<String, User> sellerCache) {
+    private SearchItemResponse toSearchResponse(ItemDistanceView view, Map<String, User> sellerCache) {
+        Item item = view.getItem();
         SearchItemResponse response = new SearchItemResponse();
         response.setItemId(item.getId());
         response.setTitle(item.getTitle());
         response.setPrice(item.getPrice());
         response.setConditionStar(item.getConditionStar());
-
         response.setCoverImage(resolveCoverImage(item.getImages(), item.getCoverImage()));
         response.setHotScore(resolveHotScore(item));
         response.setSeller(buildSearchSellerInfo(item.getSellerId(), sellerCache));
-
+        response.setLocation(toLocationDto(item.getLocation()));
+        response.setDistanceMeters(view.getDistanceMeters());
         return response;
+    }
+
+    private void applyLocation(ItemDetailResponse response, Item.Location location, Double distanceMeters) {
+        LocationDTO locationDTO = toLocationDto(location);
+        response.setLocation(locationDTO);
+        response.setDistanceMeters(distanceMeters);
+
+        if (locationDTO != null) {
+            response.setLat(locationDTO.getLat());
+            response.setLng(locationDTO.getLng());
+        } else {
+            response.setLat(null);
+            response.setLng(null);
+        }
+    }
+
+    private LocationDTO toLocationDto(Item.Location location) {
+        if (location == null) {
+            return null;
+        }
+
+        LocationDTO response = new LocationDTO();
+        response.setLat(location.getLat());
+        response.setLng(location.getLng());
+        response.setAddress(location.getAddress());
+        response.setPoiName(location.getPoiName());
+        response.setCoordType(location.getCoordType());
+        response.setSource(location.getSource());
+        return response;
+    }
+
+    private Item.Location normalizeLocation(LocationDTO requestLocation) {
+        if (requestLocation == null) {
+            return null;
+        }
+
+        Double lat = requestLocation.getLat();
+        Double lng = requestLocation.getLng();
+        boolean hasLat = lat != null;
+        boolean hasLng = lng != null;
+        if (hasLat != hasLng) {
+            throw new BusinessException("location经纬度必须同时提供");
+        }
+
+        String address = trimToNull(requestLocation.getAddress());
+        String poiName = trimToNull(requestLocation.getPoiName());
+        boolean hasCoordinates = hasLat;
+        if (!hasCoordinates && address == null && poiName == null) {
+            return null;
+        }
+
+        Item.Location location = new Item.Location();
+        if (hasCoordinates) {
+            validateCoordinates(lat, lng, "location坐标");
+            String coordType = normalizeCoordType(requestLocation.getCoordType(), COORD_TYPE_GCJ02);
+            if (COORD_TYPE_WGS84.equals(coordType)) {
+                double[] gcjCoordinates = CoordinateTransformUtil.wgs84ToGcj02(lat, lng);
+                lat = gcjCoordinates[0];
+                lng = gcjCoordinates[1];
+                coordType = COORD_TYPE_GCJ02;
+            }
+            location.setLat(lat);
+            location.setLng(lng);
+            location.setCoordType(coordType);
+        }
+
+        location.setAddress(address);
+        location.setPoiName(poiName);
+        location.setSource(normalizeSource(requestLocation.getSource()));
+        return location;
+    }
+
+    private RequestLocation normalizeRequestLocation(Double lat, Double lng) {
+        boolean hasLat = lat != null;
+        boolean hasLng = lng != null;
+        if (!hasLat && !hasLng) {
+            return null;
+        }
+        if (hasLat != hasLng) {
+            throw new BusinessException("请求定位坐标必须同时提供");
+        }
+
+        validateCoordinates(lat, lng, "请求定位坐标");
+        double[] gcjCoordinates = CoordinateTransformUtil.wgs84ToGcj02(lat, lng);
+        return new RequestLocation(gcjCoordinates[0], gcjCoordinates[1]);
+    }
+
+    private String normalizeCoordType(String coordType, String defaultCoordType) {
+        if (coordType == null || coordType.isBlank()) {
+            return defaultCoordType;
+        }
+
+        String normalized = coordType.trim().toUpperCase(Locale.ROOT);
+        if (!COORD_TYPE_WGS84.equals(normalized) && !COORD_TYPE_GCJ02.equals(normalized)) {
+            throw new BusinessException("不支持的坐标类型: " + coordType);
+        }
+        return normalized;
+    }
+
+    private String normalizeSource(String source) {
+        String normalized = trimToNull(source);
+        if (normalized == null) {
+            return DEFAULT_LOCATION_SOURCE;
+        }
+        return normalized.toLowerCase(Locale.ROOT);
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private void validateCoordinates(Double lat, Double lng, String fieldName) {
+        if (lat == null || lng == null) {
+            throw new BusinessException(fieldName + "不能为空");
+        }
+        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            throw new BusinessException(fieldName + "超出合法范围");
+        }
+    }
+
+    private ItemDistanceView buildItemDistanceView(Item item,
+                                                   RequestLocation requestLocation,
+                                                   Map<String, User> sellerCache) {
+        User seller = findSeller(item.getSellerId(), sellerCache);
+        Double distanceMeters = calculateDistanceMeters(item, requestLocation);
+        int recommendScore = buildRecommendScore(item, seller);
+        return new ItemDistanceView(item, distanceMeters, recommendScore);
+    }
+
+    private Double calculateDistanceMeters(Item item, RequestLocation requestLocation) {
+        if (requestLocation == null || item.getLocation() == null
+                || item.getLocation().getLat() == null || item.getLocation().getLng() == null) {
+            return null;
+        }
+        return DistanceUtil.haversineMeters(
+                requestLocation.lat(),
+                requestLocation.lng(),
+                item.getLocation().getLat(),
+                item.getLocation().getLng()
+        );
+    }
+
+    private boolean matchesRadius(ItemDistanceView view, Integer radiusMeters, RequestLocation requestLocation) {
+        if (requestLocation == null || radiusMeters == null || radiusMeters <= 0) {
+            return true;
+        }
+        return view.getDistanceMeters() != null && view.getDistanceMeters() <= radiusMeters;
+    }
+
+    private Comparator<ItemDistanceView> buildSearchComparator(String sort, String sortBy, RequestLocation requestLocation) {
+        if (isDistanceSort(sortBy) && requestLocation != null) {
+            return buildDistanceComparator();
+        }
+
+        if ("PRICE".equalsIgnoreCase(sort)) {
+            return Comparator.comparing((ItemDistanceView view) -> view.getItem().getPrice(), Comparator.nullsLast(BigDecimal::compareTo))
+                    .thenComparing(ItemDistanceView::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder()));
+        }
+
+        if ("HOT".equalsIgnoreCase(sort)) {
+            return Comparator.comparingInt(ItemDistanceView::getHotScore)
+                    .reversed()
+                    .thenComparing(ItemDistanceView::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder()));
+        }
+
+        return Comparator.comparing(ItemDistanceView::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder()));
+    }
+
+    private Comparator<ItemDistanceView> buildRecommendComparator(String sortBy, RequestLocation requestLocation) {
+        if (isDistanceSort(sortBy) && requestLocation != null) {
+            return buildDistanceComparator();
+        }
+
+        return Comparator.comparingInt(ItemDistanceView::getRecommendScore)
+                .reversed()
+                .thenComparing(ItemDistanceView::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder()));
+    }
+
+    private Comparator<ItemDistanceView> buildDistanceComparator() {
+        return Comparator.comparing(ItemDistanceView::getDistanceMeters, Comparator.nullsLast(Double::compareTo))
+                .thenComparing(ItemDistanceView::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder()));
+    }
+
+    private boolean isDistanceSort(String sortBy) {
+        return sortBy != null && SORT_BY_DISTANCE.equalsIgnoreCase(sortBy.trim());
     }
 
     private List<String> normalizeImages(List<String> images) {
@@ -516,5 +691,46 @@ public class ItemServiceImpl implements ItemService {
 
     private Double resolveAverageRating(User user) {
         return user.getAverageRating() == null ? DEFAULT_AVERAGE_RATING : user.getAverageRating();
+    }
+
+    private record RequestLocation(double lat, double lng) {
+    }
+
+    private static class ItemDistanceView {
+        private final Item item;
+        private final Double distanceMeters;
+        private final int recommendScore;
+
+        private ItemDistanceView(Item item, Double distanceMeters, int recommendScore) {
+            this.item = item;
+            this.distanceMeters = distanceMeters;
+            this.recommendScore = recommendScore;
+        }
+
+        public Item getItem() {
+            return item;
+        }
+
+        public Double getDistanceMeters() {
+            return distanceMeters;
+        }
+
+        public int getRecommendScore() {
+            return recommendScore;
+        }
+
+        public int getHotScore() {
+            if (item == null || item.getStats() == null) {
+                return 0;
+            }
+            int viewCount = item.getStats().getViewCount() == null ? 0 : item.getStats().getViewCount();
+            int favoriteCount = item.getStats().getFavoriteCount() == null ? 0 : item.getStats().getFavoriteCount();
+            int chatCount = item.getStats().getChatCount() == null ? 0 : item.getStats().getChatCount();
+            return viewCount + favoriteCount + chatCount;
+        }
+
+        public Date getCreatedAt() {
+            return item == null ? null : item.getCreatedAt();
+        }
     }
 }

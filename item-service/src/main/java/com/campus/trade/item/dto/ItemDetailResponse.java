@@ -104,6 +104,8 @@ public class ItemDetailResponse {
     private List<String> images;
     private String coverImage;
     private String tradeMode;
+    private LocationDTO location;
+    private Double distanceMeters;
     private Double lat;
     private Double lng;
     private String status;
@@ -197,6 +199,22 @@ public class ItemDetailResponse {
 
     public void setTradeMode(String tradeMode) {
         this.tradeMode = tradeMode;
+    }
+
+    public LocationDTO getLocation() {
+        return location;
+    }
+
+    public void setLocation(LocationDTO location) {
+        this.location = location;
+    }
+
+    public Double getDistanceMeters() {
+        return distanceMeters;
+    }
+
+    public void setDistanceMeters(Double distanceMeters) {
+        this.distanceMeters = distanceMeters;
     }
 
     public Double getLat() {

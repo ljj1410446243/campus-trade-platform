@@ -94,23 +94,33 @@ public class ItemController {
             @RequestParam(required = false) Integer minCondition,
             @RequestParam(required = false) Integer maxCondition,
             @RequestParam(required = false) String sort,
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng,
+            @RequestParam(required = false) Integer radiusMeters,
+            @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer pageSize) {
 
         return ApiResponse.success(
                 itemService.searchItems(
                         q, categoryId, minPrice, maxPrice,
-                        minCondition, maxCondition, sort, page, pageSize
+                        minCondition, maxCondition, sort,
+                        lat, lng, radiusMeters, sortBy,
+                        page, pageSize
                 )
         );
     }
 
     @GetMapping("/recommend/items")
     public ApiResponse<SearchItemPageResponse> recommendItems(
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng,
+            @RequestParam(required = false) Integer radiusMeters,
+            @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer pageSize) {
 
-        return ApiResponse.success(itemService.recommendItems(page, pageSize));
+        return ApiResponse.success(itemService.recommendItems(lat, lng, radiusMeters, sortBy, page, pageSize));
     }
 
     @PostMapping("/items/{itemId}/comments")
