@@ -37,12 +37,12 @@ public class ItemController {
         this.loginUserHelper = loginUserHelper;
     }
 
-    @GetMapping("/items/ping")
+    @GetMapping({"/items/ping", "/items/ping/"})
     public ApiResponse<String> ping() {
         return ApiResponse.success(itemService.ping());
     }
 
-    @PostMapping("/items")
+    @PostMapping({"/items", "/items/"})
     public ApiResponse<Map<String, String>> createItem(
             @RequestHeader("Authorization") String authorizationHeader,
             @Valid @RequestBody CreateItemRequest request) {
@@ -53,7 +53,7 @@ public class ItemController {
         return ApiResponse.success(Map.of("itemId", itemId));
     }
 
-    @PutMapping("/items/{itemId}")
+    @PutMapping({"/items/{itemId}", "/items/{itemId}/"})
     public ApiResponse<ItemDetailResponse> updateItem(
             @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable String itemId,
@@ -63,7 +63,7 @@ public class ItemController {
         return ApiResponse.success(itemService.updateItem(sellerId, itemId, request));
     }
 
-    @PostMapping("/items/{itemId}/off-shelf")
+    @PostMapping({"/items/{itemId}/off-shelf", "/items/{itemId}/off-shelf/"})
     public ApiResponse<Void> offShelfItem(
             @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable String itemId) {
@@ -73,19 +73,19 @@ public class ItemController {
         return ApiResponse.success();
     }
 
-    @GetMapping("/items/{itemId}")
+    @GetMapping({"/items/{itemId}", "/items/{itemId}/"})
     public ApiResponse<ItemDetailResponse> getItemDetail(@PathVariable String itemId) {
         return ApiResponse.success(itemService.getItemDetail(itemId));
     }
 
-    @GetMapping("/items/mine")
+    @GetMapping({"/items/mine", "/items/mine/"})
     public ApiResponse<List<ItemListResponse>> listMyItems(
             @RequestHeader("Authorization") String authorizationHeader) {
 
         return ApiResponse.success(itemService.listMyItems(loginUserHelper.getCurrentUserId(authorizationHeader)));
     }
 
-    @GetMapping("/search/items")
+    @GetMapping({"/search/items", "/search/items/"})
     public ApiResponse<SearchItemPageResponse> searchItems(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String categoryId,
@@ -111,7 +111,7 @@ public class ItemController {
         );
     }
 
-    @GetMapping("/recommend/items")
+    @GetMapping({"/recommend/items", "/recommend/items/"})
     public ApiResponse<SearchItemPageResponse> recommendItems(
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lng,
@@ -123,7 +123,7 @@ public class ItemController {
         return ApiResponse.success(itemService.recommendItems(lat, lng, radiusMeters, sortBy, page, pageSize));
     }
 
-    @PostMapping("/items/{itemId}/comments")
+    @PostMapping({"/items/{itemId}/comments", "/items/{itemId}/comments/"})
     public ApiResponse<Void> addItemComment(
             @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable String itemId,
@@ -135,7 +135,7 @@ public class ItemController {
         return ApiResponse.success();
     }
 
-    @GetMapping("/items/{itemId}/comments")
+    @GetMapping({"/items/{itemId}/comments", "/items/{itemId}/comments/"})
     public ApiResponse<List<ItemCommentResponse>> getItemComments(@PathVariable String itemId) {
         return ApiResponse.success(itemService.getItemComments(itemId));
     }

@@ -19,14 +19,14 @@ public class LocationController {
         this.locationService = locationService;
     }
 
-    @GetMapping("/reverse-geocode")
+    @GetMapping({"/reverse-geocode", "/reverse-geocode/"})
     public ApiResponse<LocationDTO> reverseGeocode(@RequestParam Double lat,
                                                    @RequestParam Double lng,
                                                    @RequestParam(defaultValue = "WGS84") String coordType) {
         return ApiResponse.success(locationService.reverseGeocode(lat, lng, coordType));
     }
 
-    @GetMapping("/search")
+    @GetMapping({"/search", "/search/"})
     public ApiResponse<LocationSearchResponse> searchLocations(@RequestParam String q,
                                                                @RequestParam(required = false) Double lat,
                                                                @RequestParam(required = false) Double lng) {

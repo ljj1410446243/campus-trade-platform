@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/trades")
+@RequestMapping({"/trades", "/trades/"})
 public class TradeController {
 
     private final TradeService tradeService;
@@ -33,12 +33,12 @@ public class TradeController {
         this.loginUserHelper = loginUserHelper;
     }
 
-    @GetMapping("/ping")
+    @GetMapping({"/ping", "/ping/"})
     public ApiResponse<String> ping() {
         return ApiResponse.success(tradeService.ping());
     }
 
-    @PostMapping
+    @PostMapping({"", "/"})
     public ApiResponse<Map<String, String>> createTrade(
             @RequestHeader("Authorization") String authorizationHeader,
             @Valid @RequestBody CreateTradeRequest request) {
@@ -48,26 +48,26 @@ public class TradeController {
         return ApiResponse.success(Map.of("tradeId", tradeId));
     }
 
-    @GetMapping("/buying")
+    @GetMapping({"/buying", "/buying/"})
     public ApiResponse<List<TradeListResponse>> listBuyingTrades(
             @RequestHeader("Authorization") String authorizationHeader) {
 
         return ApiResponse.success(tradeService.listBuyingTrades(loginUserHelper.getCurrentUserId(authorizationHeader)));
     }
 
-    @GetMapping("/selling")
+    @GetMapping({"/selling", "/selling/"})
     public ApiResponse<List<TradeListResponse>> listSellingTrades(
             @RequestHeader("Authorization") String authorizationHeader) {
 
         return ApiResponse.success(tradeService.listSellingTrades(loginUserHelper.getCurrentUserId(authorizationHeader)));
     }
 
-    @GetMapping("/{tradeId}")
+    @GetMapping({"/{tradeId}", "/{tradeId}/"})
     public ApiResponse<TradeDetailResponse> getTradeDetail(@PathVariable String tradeId) {
         return ApiResponse.success(tradeService.getTradeDetail(tradeId));
     }
 
-    @PostMapping("/{tradeId}/cancel")
+    @PostMapping({"/{tradeId}/cancel", "/{tradeId}/cancel/"})
     public ApiResponse<Void> cancelTrade(
             @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable String tradeId) {
@@ -76,7 +76,7 @@ public class TradeController {
         return ApiResponse.success();
     }
 
-    @PostMapping("/{tradeId}/pay")
+    @PostMapping({"/{tradeId}/pay", "/{tradeId}/pay/"})
     public ApiResponse<InitiatePaymentResponse> initiatePayment(
             @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable String tradeId,
@@ -87,7 +87,7 @@ public class TradeController {
         return ApiResponse.success(tradeService.initiatePayment(buyerId, tradeId, safeRequest));
     }
 
-    @GetMapping("/{tradeId}/pay-status")
+    @GetMapping({"/{tradeId}/pay-status", "/{tradeId}/pay-status/"})
     public ApiResponse<PaymentStatusResponse> queryPaymentStatus(
             @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable String tradeId) {
@@ -96,7 +96,7 @@ public class TradeController {
         return ApiResponse.success(tradeService.queryPaymentStatus(userId, tradeId));
     }
 
-    @PostMapping("/{tradeId}/mock-pay")
+    @PostMapping({"/{tradeId}/mock-pay", "/{tradeId}/mock-pay/"})
     public ApiResponse<PaymentStatusResponse> mockPay(
             @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable String tradeId) {
@@ -105,7 +105,7 @@ public class TradeController {
         return ApiResponse.success(tradeService.mockPay(buyerId, tradeId));
     }
 
-    @PostMapping("/{tradeId}/complete")
+    @PostMapping({"/{tradeId}/complete", "/{tradeId}/complete/"})
     public ApiResponse<Void> completeTrade(
             @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable String tradeId) {

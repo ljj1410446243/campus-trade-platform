@@ -3,10 +3,13 @@ package com.campus.trade.trade.exception;
 import com.campus.trade.common.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -35,6 +38,21 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getFieldError().getDefaultMessage();
         return ResponseEntity.badRequest().body(ApiResponse.error(400, message));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingRequestParameterException(MissingServletRequestParameterException e) {
+        return ResponseEntity.badRequest().body(ApiResponse.error(400, "请求参数缺失: " + e.getParameterName()));
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingRequestPartException(MissingServletRequestPartException e) {
+        return ResponseEntity.badRequest().body(ApiResponse.error(400, "请求体缺少字段: " + e.getRequestPartName()));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        return ResponseEntity.badRequest().body(ApiResponse.error(400, "请求体格式错误"));
     }
 
     @ExceptionHandler(Exception.class)

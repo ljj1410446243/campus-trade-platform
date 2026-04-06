@@ -40,7 +40,7 @@ public class UserController {
   /**
    * 服务健康检查接口
    */
-  @GetMapping("/ping")
+  @GetMapping({"/ping", "/ping/"})
   public ApiResponse<String> ping() {
     return ApiResponse.success("user-service is running");
   }
@@ -48,7 +48,7 @@ public class UserController {
   /**
    * 获取当前用户信息
    */
-  @GetMapping("/me")
+  @GetMapping({"/me", "/me/"})
   public ApiResponse<UserMeResponse> getMe(
           @RequestHeader("Authorization") String authorizationHeader) {
 
@@ -58,7 +58,7 @@ public class UserController {
   /**
    * 更新当前用户资料
    */
-  @PutMapping("/me")
+  @PutMapping({"/me", "/me/"})
   public ApiResponse<UserMeResponse> updateMe(
           @RequestHeader("Authorization") String authorizationHeader,
           @Valid @RequestBody UpdateUserProfileRequest request) {
@@ -66,7 +66,7 @@ public class UserController {
     return ApiResponse.success(userService.updateMe(loginUserHelper.getCurrentUserId(authorizationHeader), request));
   }
 
-  @PostMapping("/me/favorites")
+  @PostMapping({"/me/favorites", "/me/favorites/"})
   public ApiResponse<Void> addFavorite(
           @RequestHeader("Authorization") String authorizationHeader,
           @Valid @RequestBody AddFavoriteRequest request) {
@@ -75,7 +75,7 @@ public class UserController {
     return ApiResponse.success();
   }
 
-  @DeleteMapping("/me/favorites/{itemId}")
+  @DeleteMapping({"/me/favorites/{itemId}", "/me/favorites/{itemId}/"})
   public ApiResponse<Void> removeFavorite(
           @RequestHeader("Authorization") String authorizationHeader,
           @PathVariable String itemId) {
@@ -84,14 +84,14 @@ public class UserController {
     return ApiResponse.success();
   }
 
-  @GetMapping("/me/favorites")
+  @GetMapping({"/me/favorites", "/me/favorites/"})
   public ApiResponse<List<FavoriteItemResponse>> listFavorites(
           @RequestHeader("Authorization") String authorizationHeader) {
 
     return ApiResponse.success(userService.listFavorites(loginUserHelper.getCurrentUserId(authorizationHeader)));
   }
 
-  @PostMapping("/me/browse-history")
+  @PostMapping({"/me/browse-history", "/me/browse-history/"})
   public ApiResponse<Void> addBrowseHistory(
           @RequestHeader("Authorization") String authorizationHeader,
           @Valid @RequestBody AddBrowseHistoryRequest request) {
@@ -100,7 +100,7 @@ public class UserController {
     return ApiResponse.success();
   }
 
-  @GetMapping("/me/browse-history")
+  @GetMapping({"/me/browse-history", "/me/browse-history/"})
   public ApiResponse<List<BrowseHistoryItemResponse>> listBrowseHistory(
           @RequestHeader("Authorization") String authorizationHeader) {
 

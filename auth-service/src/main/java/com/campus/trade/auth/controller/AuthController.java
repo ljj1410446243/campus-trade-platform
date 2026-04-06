@@ -34,7 +34,7 @@ public class AuthController {
     this.requestContextExtractor = requestContextExtractor;
   }
 
-  @GetMapping("/ping")
+  @GetMapping({"/ping", "/ping/"})
   public ApiResponse<String> ping() {
     return ApiResponse.success(authService.ping());
   }
@@ -42,7 +42,7 @@ public class AuthController {
   /**
    * 登录接口
    */
-  @PostMapping("/login")
+  @PostMapping({"/login", "/login/"})
   public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request,
                                           HttpServletRequest httpServletRequest,
                                           HttpServletResponse httpServletResponse) {
@@ -51,7 +51,7 @@ public class AuthController {
     return ApiResponse.success(result.loginResponse());
   }
 
-  @PostMapping("/refresh")
+  @PostMapping({"/refresh", "/refresh/"})
   public ApiResponse<LoginResponse> refresh(HttpServletRequest httpServletRequest,
                                             HttpServletResponse httpServletResponse) {
     String refreshToken = refreshTokenCookieManager.readCookie(httpServletRequest);
@@ -65,7 +65,7 @@ public class AuthController {
     }
   }
 
-  @PostMapping("/logout")
+  @PostMapping({"/logout", "/logout/"})
   public ApiResponse<Void> logout(HttpServletRequest httpServletRequest,
                                   HttpServletResponse httpServletResponse) {
     String refreshToken = refreshTokenCookieManager.readCookie(httpServletRequest);
@@ -77,7 +77,7 @@ public class AuthController {
   /**
    * 解析 Token 接口
    */
-  @GetMapping("/token/parse")
+  @GetMapping({"/token/parse", "/token/parse/"})
   public ApiResponse<TokenPayloadResponse> parseToken(
           @RequestHeader("Authorization") String authorizationHeader) {
 
@@ -87,7 +87,7 @@ public class AuthController {
     return ApiResponse.success(response);
   }
 
-  @PostMapping("/register")
+  @PostMapping({"/register", "/register/"})
   public ApiResponse<Void> register(@Valid @RequestBody RegisterRequest request) {
 
     authService.register(request);
@@ -95,7 +95,7 @@ public class AuthController {
     return ApiResponse.success();
   }
 
-  @PostMapping("/campus/verify")
+  @PostMapping({"/campus/verify", "/campus/verify/"})
   public ApiResponse<Void> campusVerify(
           @RequestHeader("Authorization") String authorizationHeader,
           @Valid @RequestBody CampusVerifyRequest request) {
