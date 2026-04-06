@@ -8,6 +8,9 @@ public class UserMeResponse {
   private String userId;
   private String username;
   private String nickname;
+  private String phone;
+  private String realName;
+  private String studentId;
   private String avatarUrl;
   private Boolean campusVerified;
   private Integer creditScore;
@@ -19,12 +22,16 @@ public class UserMeResponse {
   public UserMeResponse() {
   }
 
-  public UserMeResponse(String userId, String username, String nickname, String avatarUrl,
+  public UserMeResponse(String userId, String username, String nickname, String phone,
+                        String realName, String studentId, String avatarUrl,
                         Boolean campusVerified, Integer creditScore, String creditLevel,
                         Integer reviewCount, Double averageRating, String role) {
     this.userId = userId;
     this.username = username;
     this.nickname = nickname;
+    this.phone = phone;
+    this.realName = realName;
+    this.studentId = studentId;
     this.avatarUrl = avatarUrl;
     this.campusVerified = campusVerified;
     this.creditScore = creditScore;
@@ -56,6 +63,30 @@ public class UserMeResponse {
 
   public void setNickname(String nickname) {
     this.nickname = nickname;
+  }
+
+  public String getPhone() {
+    return phone;
+  }
+
+  public void setPhone(String phone) {
+    this.phone = phone;
+  }
+
+  public String getRealName() {
+    return realName;
+  }
+
+  public void setRealName(String realName) {
+    this.realName = realName;
+  }
+
+  public String getStudentId() {
+    return studentId;
+  }
+
+  public void setStudentId(String studentId) {
+    this.studentId = studentId;
   }
 
   public String getAvatarUrl() {

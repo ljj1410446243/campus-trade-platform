@@ -1,5 +1,6 @@
 package com.campus.trade.auth.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 
 /**
@@ -7,18 +8,19 @@ import jakarta.validation.constraints.NotBlank;
  */
 public class LoginRequest {
 
-  @NotBlank(message = "username不能为空")
-  private String username;
+  @JsonAlias("username")
+  @NotBlank(message = "account不能为空")
+  private String account;
 
   @NotBlank(message = "password不能为空")
   private String password;
 
-  public String getUsername() {
-    return username;
+  public String getAccount() {
+    return account;
   }
 
-  public void setUsername(String username) {
-    this.username = username;
+  public void setAccount(String account) {
+    this.account = account;
   }
 
   public String getPassword() {

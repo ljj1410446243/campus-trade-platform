@@ -26,12 +26,15 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * AuthService实现
  */
 @Service
 public class AuthServiceImpl implements AuthService {
+
+  private static final Pattern MAINLAND_CHINA_PHONE_PATTERN = Pattern.compile("^1[3-9]\\d{9}$");
 
   private final JwtUtil jwtUtil;
   private final UserRepository userRepository;
@@ -59,10 +62,12 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public AuthTokenResult login(LoginRequest request, ClientContext clientContext) {
+    String account = normalize(request.getAccount());
 
-    User user = userRepository.findByUsername(request.getUsername())
+    User user = userRepository.findByUsername(account)
+            .or(() -> userRepository.findByPhone(account))
             .orElseThrow(() ->
-                    new BusinessException(ErrorCode.AUTH_ERROR, HttpStatus.UNAUTHORIZED, "用户名或密码错误"));
+                    new BusinessException(ErrorCode.AUTH_ERROR, HttpStatus.UNAUTHORIZED, "账号或密码错误"));
 
     boolean passwordMatched = passwordEncoder.matches(
             request.getPassword(),
@@ -70,7 +75,7 @@ public class AuthServiceImpl implements AuthService {
     );
 
     if (!passwordMatched) {
-      throw new BusinessException(ErrorCode.AUTH_ERROR, HttpStatus.UNAUTHORIZED, "用户名或密码错误");
+      throw new BusinessException(ErrorCode.AUTH_ERROR, HttpStatus.UNAUTHORIZED, "账号或密码错误");
     }
 
     TokenBundle tokenBundle = createSession(user, clientContext);
@@ -137,17 +142,31 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public void register(RegisterRequest request) {
+    String username = normalize(request.getUsername());
+    String phone = normalize(request.getPhone());
+    String nickname = normalize(request.getNickname());
 
-    boolean exists = userRepository.findByUsername(request.getUsername()).isPresent();
+    boolean usernameExists = userRepository.findByUsername(username).isPresent();
 
-    if (exists) {
+    if (usernameExists) {
       throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS, "用户名已存在");
     }
 
+    if (!MAINLAND_CHINA_PHONE_PATTERN.matcher(phone).matches()) {
+      throw new BusinessException(ErrorCode.BAD_REQUEST, "手机号格式不正确");
+    }
+
+    if (userRepository.existsByPhone(phone)) {
+      throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS, "手机号已存在");
+    }
+
     User user = new User();
-    user.setUsername(request.getUsername());
+    user.setUsername(username);
     user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+    user.setPhone(phone);
+    user.setNickname(nickname);
     user.setRole("USER");
+    user.setCampusVerified(false);
 
     userRepository.save(user);
   }
@@ -159,9 +178,9 @@ public class AuthServiceImpl implements AuthService {
             .orElseThrow(() ->
                     new BusinessException(ErrorCode.USER_NOT_FOUND, "用户不存在"));
 
+    user.setRealName(normalize(request.getRealName()));
     user.setCampusVerified(true);
-    user.setStudentId(request.getStudentId());
-    user.setSchoolEmail(request.getSchoolEmail());
+    user.setStudentId(normalize(request.getStudentId()));
 
     userRepository.save(user);
   }
@@ -204,6 +223,10 @@ public class AuthServiceImpl implements AuthService {
     } catch (NoSuchAlgorithmException e) {
       throw new IllegalStateException("SHA-256 not available", e);
     }
+  }
+
+  private String normalize(String value) {
+    return value == null ? null : value.trim();
   }
 
   private record TokenBundle(String accessToken, String refreshToken) {

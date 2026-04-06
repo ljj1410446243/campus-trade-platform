@@ -16,7 +16,11 @@ public class User {
 
     private String passwordHash;
 
+    private String phone;
+
     private String nickname;
+
+    private String realName;
 
     private String avatarUrl;
 
@@ -25,8 +29,6 @@ public class User {
     private boolean campusVerified;
 
     private String studentId;
-
-    private String schoolEmail;
 
     private Integer creditScore;
 
@@ -60,12 +62,28 @@ public class User {
         this.passwordHash = passwordHash;
     }
 
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
     public String getNickname() {
         return nickname;
     }
 
     public void setNickname(String nickname) {
         this.nickname = nickname;
+    }
+
+    public String getRealName() {
+        return realName;
+    }
+
+    public void setRealName(String realName) {
+        this.realName = realName;
     }
 
     public String getAvatarUrl() {
@@ -98,14 +116,6 @@ public class User {
 
     public void setStudentId(String studentId) {
         this.studentId = studentId;
-    }
-
-    public String getSchoolEmail() {
-        return schoolEmail;
-    }
-
-    public void setSchoolEmail(String schoolEmail) {
-        this.schoolEmail = schoolEmail;
     }
 
     public Integer getCreditScore() {

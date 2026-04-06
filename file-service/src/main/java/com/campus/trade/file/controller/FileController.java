@@ -38,7 +38,7 @@ public class FileController {
         this.loginUserHelper = loginUserHelper;
     }
 
-    @PostMapping("/upload/image")
+    @PostMapping({"/upload/image", "/upload/image/"})
     public ApiResponse<FileUploadResponse> uploadImage(
             @RequestHeader("Authorization") String authorizationHeader,
             @RequestParam("file") MultipartFile file,
@@ -48,7 +48,7 @@ public class FileController {
         return ApiResponse.success(fileService.uploadImage(ownerId, file, bizType));
     }
 
-    @PostMapping("/upload/images")
+    @PostMapping({"/upload/images", "/upload/images/"})
     public ApiResponse<List<BatchFileUploadItemResponse>> uploadImages(
             @RequestHeader("Authorization") String authorizationHeader,
             @RequestParam("files") MultipartFile[] files,

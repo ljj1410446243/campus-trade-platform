@@ -7,11 +7,19 @@ import jakarta.validation.constraints.NotBlank;
  */
 public class CampusVerifyRequest {
 
+  @NotBlank(message = "realName不能为空")
+  private String realName;
+
   @NotBlank(message = "studentId不能为空")
   private String studentId;
 
-  @NotBlank(message = "schoolEmail不能为空")
-  private String schoolEmail;
+  public String getRealName() {
+    return realName;
+  }
+
+  public void setRealName(String realName) {
+    this.realName = realName;
+  }
 
   public String getStudentId() {
     return studentId;
@@ -19,13 +27,5 @@ public class CampusVerifyRequest {
 
   public void setStudentId(String studentId) {
     this.studentId = studentId;
-  }
-
-  public String getSchoolEmail() {
-    return schoolEmail;
-  }
-
-  public void setSchoolEmail(String schoolEmail) {
-    this.schoolEmail = schoolEmail;
   }
 }
