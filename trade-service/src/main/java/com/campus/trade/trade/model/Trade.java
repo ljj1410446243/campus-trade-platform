@@ -15,6 +15,14 @@ public class Trade {
     private String itemId;
     private String buyerId;
     private String sellerId;
+    private String deliveryMode;
+    private String pickupPointId;
+    private String pickupPointName;
+    private String pickupAddress;
+    private Double pickupLat;
+    private Double pickupLng;
+    private String pickupContactPhone;
+    private String pickupBusinessHours;
 
     /**
      * 成交价
@@ -82,6 +90,70 @@ public class Trade {
 
     public void setSellerId(String sellerId) {
         this.sellerId = sellerId;
+    }
+
+    public String getDeliveryMode() {
+        return deliveryMode;
+    }
+
+    public void setDeliveryMode(String deliveryMode) {
+        this.deliveryMode = deliveryMode;
+    }
+
+    public String getPickupPointId() {
+        return pickupPointId;
+    }
+
+    public void setPickupPointId(String pickupPointId) {
+        this.pickupPointId = pickupPointId;
+    }
+
+    public String getPickupPointName() {
+        return pickupPointName;
+    }
+
+    public void setPickupPointName(String pickupPointName) {
+        this.pickupPointName = pickupPointName;
+    }
+
+    public String getPickupAddress() {
+        return pickupAddress;
+    }
+
+    public void setPickupAddress(String pickupAddress) {
+        this.pickupAddress = pickupAddress;
+    }
+
+    public Double getPickupLat() {
+        return pickupLat;
+    }
+
+    public void setPickupLat(Double pickupLat) {
+        this.pickupLat = pickupLat;
+    }
+
+    public Double getPickupLng() {
+        return pickupLng;
+    }
+
+    public void setPickupLng(Double pickupLng) {
+        this.pickupLng = pickupLng;
+    }
+
+    public String getPickupContactPhone() {
+        return pickupContactPhone;
+    }
+
+    public void setPickupContactPhone(String pickupContactPhone) {
+        this.pickupContactPhone = pickupContactPhone;
+    }
+
+    public String getPickupBusinessHours() {
+        return pickupBusinessHours;
+    }
+
+    public void setPickupBusinessHours(String pickupBusinessHours) {
+        this.pickupBusinessHours = pickupBusinessHours;
     }
 
     public String getTradeNo() {

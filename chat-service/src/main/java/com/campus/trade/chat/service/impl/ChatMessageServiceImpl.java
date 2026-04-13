@@ -7,6 +7,7 @@ import com.campus.trade.chat.entity.ChatMessage;
 import com.campus.trade.chat.repository.ChatMessageRepository;
 import com.campus.trade.chat.service.ChatConversationService;
 import com.campus.trade.chat.service.ChatMessageService;
+import com.campus.trade.chat.util.UserAccessGuard;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
   private final ChatMessageRepository chatMessageRepository;
   private final ChatConversationService chatConversationService;
+  private final UserAccessGuard userAccessGuard;
 
   @Override
   public List<MessageVO> getMessagesByConversationId(String conversationId, String currentUserId) {
@@ -42,6 +44,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
   @Override
   public ChatMessage saveMessage(String conversationId, String senderId, String type, String content) {
+    userAccessGuard.assertWritable(senderId);
     ChatConversation conversation = chatConversationService.getById(conversationId);
     chatConversationService.validateConversationMember(conversation, senderId);
 

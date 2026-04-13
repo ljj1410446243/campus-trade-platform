@@ -16,6 +16,7 @@ public class User {
     private String creditLevel;
     private Integer reviewCount;
     private Double averageRating;
+    private String status;
 
     public String getId() {
         return id;
@@ -79,5 +80,13 @@ public class User {
 
     public void setAverageRating(Double averageRating) {
         this.averageRating = averageRating;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

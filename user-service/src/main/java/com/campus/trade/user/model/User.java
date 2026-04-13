@@ -3,6 +3,8 @@ package com.campus.trade.user.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.Date;
+
 /**
  * 用户实体
  */
@@ -26,9 +28,15 @@ public class User {
 
     private String role;
 
+    private String status;
+
     private boolean campusVerified;
 
     private String studentId;
+
+    private Date bannedAt;
+
+    private String bannedReason;
 
     private Integer creditScore;
 
@@ -116,6 +124,30 @@ public class User {
 
     public void setStudentId(String studentId) {
         this.studentId = studentId;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Date getBannedAt() {
+        return bannedAt;
+    }
+
+    public void setBannedAt(Date bannedAt) {
+        this.bannedAt = bannedAt;
+    }
+
+    public String getBannedReason() {
+        return bannedReason;
+    }
+
+    public void setBannedReason(String bannedReason) {
+        this.bannedReason = bannedReason;
     }
 
     public Integer getCreditScore() {

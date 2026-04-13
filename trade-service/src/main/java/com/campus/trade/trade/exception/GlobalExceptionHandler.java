@@ -16,7 +16,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
-        return ResponseEntity.badRequest().body(ApiResponse.error(e.getCode(), e.getMessage()));
+        HttpStatus status = HttpStatus.resolve(e.getCode());
+        if (status == null || !status.is4xxClientError()) {
+            status = HttpStatus.BAD_REQUEST;
+        }
+        return ResponseEntity.status(status).body(ApiResponse.error(e.getCode(), e.getMessage()));
     }
 
     @ExceptionHandler(AuthenticationException.class)

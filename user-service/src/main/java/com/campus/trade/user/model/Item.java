@@ -4,6 +4,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
+import java.util.Date;
 
 @Document(collection = "items")
 public class Item {
@@ -12,9 +13,12 @@ public class Item {
     private String id;
 
     private String title;
+    private String sellerId;
     private BigDecimal price;
     private Integer conditionStar;
     private String coverImage;
+    private String status;
+    private Date updatedAt;
 
     public String getId() {
         return id;
@@ -30,6 +34,14 @@ public class Item {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getSellerId() {
+        return sellerId;
+    }
+
+    public void setSellerId(String sellerId) {
+        this.sellerId = sellerId;
     }
 
     public BigDecimal getPrice() {
@@ -54,5 +66,21 @@ public class Item {
 
     public void setCoverImage(String coverImage) {
         this.coverImage = coverImage;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Date getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

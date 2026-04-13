@@ -21,6 +21,8 @@ public interface TradeService {
 
     PaymentStatusResponse mockPay(String buyerId, String tradeId);
 
+    TradeDetailResponse mockPaySuccess(String buyerId, String tradeId);
+
     List<TradeListResponse> listBuyingTrades(String buyerId);
 
     List<TradeListResponse> listSellingTrades(String sellerId);
@@ -28,6 +30,8 @@ public interface TradeService {
     TradeDetailResponse getTradeDetail(String tradeId);
 
     void cancelTrade(String userId, String tradeId);
+
+    void deliverTrade(String userId, String tradeId);
 
     void completeTrade(String userId, String tradeId);
 }

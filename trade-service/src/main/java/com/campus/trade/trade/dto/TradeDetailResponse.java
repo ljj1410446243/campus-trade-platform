@@ -14,6 +14,14 @@ public class TradeDetailResponse {
 
     private String buyerNickname;
     private String sellerNickname;
+    private String deliveryMode;
+    private String pickupPointId;
+    private String pickupPointName;
+    private String pickupAddress;
+    private Double pickupLat;
+    private Double pickupLng;
+    private String pickupContactPhone;
+    private String pickupBusinessHours;
 
     private Double price;
     private String status;

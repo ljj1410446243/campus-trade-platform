@@ -11,6 +11,13 @@ import com.campus.trade.review.repository.ReviewRepository;
 import com.campus.trade.review.repository.TradeRepository;
 import com.campus.trade.review.repository.UserRepository;
 import com.campus.trade.review.service.ReviewService;
+import com.campus.trade.review.util.UserAccessGuard;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -20,6 +27,8 @@ import java.util.Map;
 
 @Service
 public class ReviewServiceImpl implements ReviewService {
+
+    private static final Logger log = LoggerFactory.getLogger(ReviewServiceImpl.class);
 
     private static final int DEFAULT_CREDIT_SCORE = 0;
     private static final int DEFAULT_REVIEW_COUNT = 0;
@@ -33,39 +42,52 @@ public class ReviewServiceImpl implements ReviewService {
     private final ReviewRepository reviewRepository;
     private final TradeRepository tradeRepository;
     private final UserRepository userRepository;
+    private final MongoTemplate mongoTemplate;
+    private final UserAccessGuard userAccessGuard;
 
     public ReviewServiceImpl(ReviewRepository reviewRepository,
                              TradeRepository tradeRepository,
-                             UserRepository userRepository) {
+                             UserRepository userRepository,
+                             MongoTemplate mongoTemplate,
+                             UserAccessGuard userAccessGuard) {
         this.reviewRepository = reviewRepository;
         this.tradeRepository = tradeRepository;
         this.userRepository = userRepository;
+        this.mongoTemplate = mongoTemplate;
+        this.userAccessGuard = userAccessGuard;
     }
 
     @Override
     public String createReview(String currentUserId, CreateReviewRequest request) {
+        userAccessGuard.assertWritable(currentUserId);
+        String tradeId = request.getTradeId();
         Trade trade = tradeRepository.findById(request.getTradeId())
-                .orElseThrow(() -> new BusinessException("交易不存在"));
+                .orElseThrow(() -> new BusinessException(404, "交易不存在"));
+
+        validateTradeParticipants(trade);
 
         if (!"COMPLETED".equals(trade.getStatus())) {
-            throw new BusinessException("当前交易未完成，不能评价");
+            throw new BusinessException(409, "当前交易未完成，不能评价");
         }
 
-        String toUserId;
-        if (currentUserId.equals(trade.getBuyerId())) {
-            toUserId = trade.getSellerId();
-        } else if (currentUserId.equals(trade.getSellerId())) {
-            toUserId = trade.getBuyerId();
-        } else {
-            throw new BusinessException(403, "无权限评价该交易");
+        String toUserId = resolveToUserId(currentUserId, trade);
+
+        boolean exists = reviewRepository.existsByTradeIdAndFromUserId(request.getTradeId(), currentUserId);
+        log.info("create-review check tradeId={} currentUserId={} status={} buyerId={} sellerId={} toUserId={} existsByTradeIdAndFromUserId={}",
+                tradeId,
+                currentUserId,
+                trade.getStatus(),
+                trade.getBuyerId(),
+                trade.getSellerId(),
+                toUserId,
+                exists);
+        if (exists) {
+            throw new BusinessException(409, "您已评价过该交易");
         }
 
-        if (reviewRepository.existsByTradeIdAndFromUserId(request.getTradeId(), currentUserId)) {
-            throw new BusinessException("您已评价过该交易");
-        }
-
+        log.info("create-review load-target-user tradeId={} currentUserId={} toUserId={}", tradeId, currentUserId, toUserId);
         userRepository.findById(toUserId)
-                .orElseThrow(() -> new BusinessException("被评价用户不存在"));
+                .orElseThrow(() -> new BusinessException(409, "被评价用户不存在"));
 
         Review review = new Review();
         review.setTradeId(trade.getId());
@@ -76,8 +98,24 @@ public class ReviewServiceImpl implements ReviewService {
         review.setComment(request.getComment());
         review.setCreatedAt(new Date());
 
+        log.info("create-review save-start tradeId={} currentUserId={} toUserId={}", tradeId, currentUserId, toUserId);
         Review savedReview = reviewRepository.save(review);
-        recalculateCreditProfile(toUserId);
+        log.info("create-review save-done tradeId={} currentUserId={} toUserId={} reviewId={}",
+                tradeId, currentUserId, toUserId, savedReview.getId());
+        log.info("create-review credit-recalc-start tradeId={} currentUserId={} toUserId={}", tradeId, currentUserId, toUserId);
+        try {
+            recalculateCreditProfile(toUserId);
+            log.info("create-review credit-recalc-done tradeId={} currentUserId={} toUserId={} reviewId={}",
+                    tradeId, currentUserId, toUserId, savedReview.getId());
+        } catch (RuntimeException e) {
+            log.error("create-review credit-recalc-failed tradeId={} currentUserId={} toUserId={} reviewId={} exceptionType={}",
+                    tradeId,
+                    currentUserId,
+                    toUserId,
+                    savedReview.getId(),
+                    e.getClass().getName(),
+                    e);
+        }
         return savedReview.getId();
     }
 
@@ -94,7 +132,8 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public ReviewStatusResponse getTradeReviewStatus(String tradeId) {
         Trade trade = tradeRepository.findById(tradeId)
-                .orElseThrow(() -> new BusinessException("交易不存在"));
+                .orElseThrow(() -> new BusinessException(404, "交易不存在"));
+        validateTradeParticipants(trade);
 
         boolean buyerReviewed = false;
         boolean sellerReviewed = false;
@@ -152,17 +191,23 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     private void recalculateCreditProfile(String userId) {
+        if (isBlank(userId)) {
+            throw new BusinessException(409, "评价目标非法，暂时不能更新信用分");
+        }
+
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException("被评价用户不存在"));
+                .orElseThrow(() -> new BusinessException(409, "被评价用户不存在"));
 
         List<Review> reviews = reviewRepository.findByToUserId(userId);
         int reviewCount = reviews.size();
         if (reviewCount == 0) {
-            user.setCreditScore(DEFAULT_CREDIT_SCORE);
-            user.setCreditLevel(CREDIT_LEVEL_NEW);
-            user.setReviewCount(DEFAULT_REVIEW_COUNT);
-            user.setAverageRating(DEFAULT_AVERAGE_RATING);
-            userRepository.save(user);
+            updateCreditProfile(
+                    user.getId(),
+                    DEFAULT_CREDIT_SCORE,
+                    CREDIT_LEVEL_NEW,
+                    DEFAULT_REVIEW_COUNT,
+                    DEFAULT_AVERAGE_RATING
+            );
             return;
         }
 
@@ -174,12 +219,29 @@ public class ReviewServiceImpl implements ReviewService {
         double averageRating = ratingSum / reviewCount;
         int creditScore = Math.min(100, (int) Math.round(averageRating * 18 + Math.min(reviewCount, 10)));
 
-        user.setAverageRating(averageRating);
-        user.setReviewCount(reviewCount);
-        user.setCreditScore(creditScore);
-        user.setCreditLevel(resolveCreditLevel(creditScore, reviewCount));
+        updateCreditProfile(
+                user.getId(),
+                creditScore,
+                resolveCreditLevel(creditScore, reviewCount),
+                reviewCount,
+                averageRating
+        );
+    }
 
-        userRepository.save(user);
+    private void updateCreditProfile(String userId,
+                                     int creditScore,
+                                     String creditLevel,
+                                     int reviewCount,
+                                     double averageRating) {
+        mongoTemplate.updateFirst(
+                Query.query(Criteria.where("_id").is(userId)),
+                new Update()
+                        .set("creditScore", creditScore)
+                        .set("creditLevel", creditLevel)
+                        .set("reviewCount", reviewCount)
+                        .set("averageRating", averageRating),
+                User.class
+        );
     }
 
     private String resolveCreditLevel(int creditScore, int reviewCount) {
@@ -196,5 +258,31 @@ public class ReviewServiceImpl implements ReviewService {
             return CREDIT_LEVEL_FAIR;
         }
         return CREDIT_LEVEL_LOW;
+    }
+
+    private void validateTradeParticipants(Trade trade) {
+        if (isBlank(trade.getBuyerId()) || isBlank(trade.getSellerId())) {
+            throw new BusinessException(409, "交易缺少买卖双方信息，暂时不能评价");
+        }
+    }
+
+    private String resolveToUserId(String currentUserId, Trade trade) {
+        String toUserId;
+        if (currentUserId.equals(trade.getBuyerId())) {
+            toUserId = trade.getSellerId();
+        } else if (currentUserId.equals(trade.getSellerId())) {
+            toUserId = trade.getBuyerId();
+        } else {
+            throw new BusinessException(403, "无权限评价该交易");
+        }
+
+        if (isBlank(toUserId) || currentUserId.equals(toUserId)) {
+            throw new BusinessException(409, "评价目标非法，暂时不能评价");
+        }
+        return toUserId;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

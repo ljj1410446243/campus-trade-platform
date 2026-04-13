@@ -20,6 +20,7 @@ import com.campus.trade.user.repository.BrowseHistoryRepository;
 import com.campus.trade.user.repository.ItemRepository;
 import com.campus.trade.user.dto.BrowseHistoryItemResponse;
 import com.campus.trade.user.exception.BusinessException;
+import com.campus.trade.user.util.UserAccessGuard;
 import java.util.HashMap;
 import java.util.Map;
 /**
@@ -37,15 +38,18 @@ public class UserServiceImpl implements UserService {
     private final FavoriteRepository favoriteRepository;
     private final BrowseHistoryRepository browseHistoryRepository;
     private final ItemRepository itemRepository;
+    private final UserAccessGuard userAccessGuard;
 
     public UserServiceImpl(UserRepository userRepository,
                            FavoriteRepository favoriteRepository,
                            BrowseHistoryRepository browseHistoryRepository,
-                           ItemRepository itemRepository) {
+                           ItemRepository itemRepository,
+                           UserAccessGuard userAccessGuard) {
         this.userRepository = userRepository;
         this.favoriteRepository = favoriteRepository;
         this.browseHistoryRepository = browseHistoryRepository;
         this.itemRepository = itemRepository;
+        this.userAccessGuard = userAccessGuard;
     }
 
     @Override
@@ -58,8 +62,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserMeResponse updateMe(String userId, UpdateUserProfileRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException("用户不存在"));
+        User user = userAccessGuard.assertWritable(userId);
 
         user.setNickname(request.getNickname());
         user.setAvatarUrl(request.getAvatarUrl());
@@ -71,6 +74,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void addFavorite(String userId, AddFavoriteRequest request) {
+        userAccessGuard.assertWritable(userId);
         boolean exists = favoriteRepository
                 .findByUserIdAndItemId(userId, request.getItemId())
                 .isPresent();
@@ -107,6 +111,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void removeFavorite(String userId, String itemId) {
+        userAccessGuard.assertWritable(userId);
         boolean exists = favoriteRepository.findByUserIdAndItemId(userId, itemId).isPresent();
 
         if (!exists) {
@@ -127,6 +132,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void addBrowseHistory(String userId, AddBrowseHistoryRequest request) {
+        userAccessGuard.assertWritable(userId);
         BrowseHistory history = new BrowseHistory();
         history.setUserId(userId);
         history.setItemId(request.getItemId());

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -34,6 +35,7 @@ public class CreateItemRequest {
     private String categoryName;
 
     @NotBlank(message = "tradeMode不能为空")
+    @Pattern(regexp = "(?i)\\s*(ONLINE|OFFLINE|BOTH)\\s*", message = "tradeMode仅支持ONLINE、OFFLINE或BOTH")
     private String tradeMode;
 
     private List<String> images;

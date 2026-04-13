@@ -166,6 +166,7 @@ public class AuthServiceImpl implements AuthService {
     user.setPhone(phone);
     user.setNickname(nickname);
     user.setRole("USER");
+    user.setStatus("ACTIVE");
     user.setCampusVerified(false);
 
     userRepository.save(user);

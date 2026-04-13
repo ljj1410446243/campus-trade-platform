@@ -1,6 +1,7 @@
 package com.campus.trade.item.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
@@ -8,6 +9,7 @@ import java.util.Date;
 import java.util.List;
 
 @Document(collection = "items")
+@CompoundIndex(name = "status_expire_idx", def = "{'status': 1, 'expireAt': 1}")
 public class Item {
 
     @Id

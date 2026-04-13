@@ -14,6 +14,7 @@ import com.campus.trade.file.service.StoredFileInfo;
 import com.campus.trade.file.util.FileBizType;
 import com.campus.trade.file.util.FileConstants;
 import com.campus.trade.file.util.ImageMetadataUtil;
+import com.campus.trade.file.util.UserAccessGuard;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,17 +29,21 @@ public class FileServiceImpl implements FileService {
     private final FileRepository fileRepository;
     private final StorageService storageService;
     private final FileStorageProperties fileStorageProperties;
+    private final UserAccessGuard userAccessGuard;
 
     public FileServiceImpl(FileRepository fileRepository,
                            StorageService storageService,
-                           FileStorageProperties fileStorageProperties) {
+                           FileStorageProperties fileStorageProperties,
+                           UserAccessGuard userAccessGuard) {
         this.fileRepository = fileRepository;
         this.storageService = storageService;
         this.fileStorageProperties = fileStorageProperties;
+        this.userAccessGuard = userAccessGuard;
     }
 
     @Override
     public FileUploadResponse uploadImage(String ownerId, MultipartFile file, String bizType) {
+        userAccessGuard.assertWritable(ownerId);
         String normalizedBizType = FileBizType.normalize(bizType);
         validateFiles(normalizedBizType, new MultipartFile[]{file});
         return toUploadResponse(saveFile(ownerId, file, normalizedBizType));
@@ -46,6 +51,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public List<BatchFileUploadItemResponse> uploadImages(String ownerId, MultipartFile[] files, String bizType) {
+        userAccessGuard.assertWritable(ownerId);
         String normalizedBizType = FileBizType.normalize(bizType);
         validateFiles(normalizedBizType, files);
 
@@ -80,6 +86,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public void bindFiles(String ownerId, BindFileRequest request) {
+        userAccessGuard.assertWritable(ownerId);
         List<FileDocument> fileDocuments = fileRepository.findAllById(request.getFileIds());
         if (fileDocuments.size() != request.getFileIds().size()) {
             throw new BusinessException(404, "存在文件不存在");
@@ -103,6 +110,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public void deleteFile(String ownerId, String fileId) {
+        userAccessGuard.assertWritable(ownerId);
         FileDocument fileDocument = getFileOrThrow(fileId);
         validateOwner(ownerId, fileDocument);
 

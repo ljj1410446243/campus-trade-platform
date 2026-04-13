@@ -14,6 +14,7 @@ public class ItemDocument {
     private String sellerId;
     private String title;
     private BigDecimal price;
+    private String tradeMode;
     private String status;
     private Date updatedAt;
 
@@ -47,6 +48,14 @@ public class ItemDocument {
 
     public void setPrice(BigDecimal price) {
         this.price = price;
+    }
+
+    public String getTradeMode() {
+        return tradeMode;
+    }
+
+    public void setTradeMode(String tradeMode) {
+        this.tradeMode = tradeMode;
     }
 
     public String getStatus() {

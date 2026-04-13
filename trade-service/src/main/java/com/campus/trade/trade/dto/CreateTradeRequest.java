@@ -12,6 +12,8 @@ public class CreateTradeRequest {
     private Double price;
 
     private String sellerId;
+    private String deliveryMode;
+    private String pickupPointId;
 
     public String getItemId() {
         return itemId;
@@ -35,5 +37,21 @@ public class CreateTradeRequest {
 
     public void setSellerId(String sellerId) {
         this.sellerId = sellerId;
+    }
+
+    public String getDeliveryMode() {
+        return deliveryMode;
+    }
+
+    public void setDeliveryMode(String deliveryMode) {
+        this.deliveryMode = deliveryMode;
+    }
+
+    public String getPickupPointId() {
+        return pickupPointId;
+    }
+
+    public void setPickupPointId(String pickupPointId) {
+        this.pickupPointId = pickupPointId;
     }
 }

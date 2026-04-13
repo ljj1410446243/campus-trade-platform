@@ -15,9 +15,14 @@ import com.campus.trade.item.model.User;
 import com.campus.trade.item.repository.ItemCommentRepository;
 import com.campus.trade.item.repository.ItemRepository;
 import com.campus.trade.item.repository.UserRepository;
+import com.campus.trade.item.service.ItemCacheInvalidationService;
 import com.campus.trade.item.service.ItemService;
 import com.campus.trade.item.util.CoordinateTransformUtil;
 import com.campus.trade.item.util.DistanceUtil;
+import com.campus.trade.item.util.UserAccessGuard;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -35,6 +40,7 @@ import java.util.regex.Pattern;
 
 @Service
 public class ItemServiceImpl implements ItemService {
+    private static final Logger log = LoggerFactory.getLogger(ItemServiceImpl.class);
 
     private static final int DEFAULT_CREDIT_SCORE = 0;
     private static final int DEFAULT_REVIEW_COUNT = 0;
@@ -43,24 +49,35 @@ public class ItemServiceImpl implements ItemService {
     private static final String STATUS_ON_SALE = "ON_SALE";
     private static final String STATUS_SOLD = "SOLD";
     private static final String STATUS_OFF_SHELF = "OFF_SHELF";
+    private static final String STATUS_EXPIRED = "EXPIRED";
     private static final String COORD_TYPE_WGS84 = "WGS84";
     private static final String COORD_TYPE_GCJ02 = "GCJ02";
     private static final String DEFAULT_LOCATION_SOURCE = "manual";
     private static final String SORT_BY_DISTANCE = "distance";
+    private static final String TRADE_MODE_ONLINE = "ONLINE";
+    private static final String TRADE_MODE_OFFLINE = "OFFLINE";
+    private static final String TRADE_MODE_BOTH = "BOTH";
+    private static final String IMAGE_URL_FIELD = "url";
 
     private final ItemRepository itemRepository;
     private final ItemCommentRepository itemCommentRepository;
     private final UserRepository userRepository;
     private final MongoTemplate mongoTemplate;
+    private final UserAccessGuard userAccessGuard;
+    private final ItemCacheInvalidationService itemCacheInvalidationService;
 
     public ItemServiceImpl(ItemRepository itemRepository,
                            ItemCommentRepository itemCommentRepository,
                            UserRepository userRepository,
-                           MongoTemplate mongoTemplate) {
+                           MongoTemplate mongoTemplate,
+                           UserAccessGuard userAccessGuard,
+                           ItemCacheInvalidationService itemCacheInvalidationService) {
         this.itemRepository = itemRepository;
         this.itemCommentRepository = itemCommentRepository;
         this.userRepository = userRepository;
         this.mongoTemplate = mongoTemplate;
+        this.userAccessGuard = userAccessGuard;
+        this.itemCacheInvalidationService = itemCacheInvalidationService;
     }
 
     @Override
@@ -70,6 +87,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public String createItem(String sellerId, CreateItemRequest request) {
+        userAccessGuard.assertWritable(sellerId);
         Item item = new Item();
         item.setSellerId(sellerId);
         item.setTitle(request.getTitle());
@@ -81,7 +99,7 @@ public class ItemServiceImpl implements ItemService {
         List<String> images = normalizeImages(request.getImages());
         item.setImages(images);
         item.setCoverImage(resolveCoverImage(images));
-        item.setTradeMode(request.getTradeMode());
+        item.setTradeMode(normalizeTradeMode(request.getTradeMode()));
         item.setExpireAt(request.getExpireAt());
         item.setStatus(STATUS_ON_SALE);
         item.setLocation(normalizeLocation(request.getLocation()));
@@ -97,10 +115,12 @@ public class ItemServiceImpl implements ItemService {
         item.setUpdatedAt(now);
 
         Item saved = itemRepository.save(item);
+        itemCacheInvalidationService.evictItem(saved.getId());
         return saved.getId();
     }
 
     @Override
+    @Cacheable(cacheNames = "item:detail", key = "#itemId")
     public ItemDetailResponse getItemDetail(String itemId) {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new BusinessException("商品不存在"));
@@ -118,6 +138,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemDetailResponse updateItem(String sellerId, String itemId, UpdateItemRequest request) {
+        userAccessGuard.assertWritable(sellerId);
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new BusinessException("商品不存在"));
 
@@ -130,6 +151,9 @@ public class ItemServiceImpl implements ItemService {
         if (STATUS_OFF_SHELF.equals(item.getStatus())) {
             throw new BusinessException("已下架商品不可编辑");
         }
+        if (STATUS_EXPIRED.equals(item.getStatus())) {
+            throw new BusinessException("已过期商品不可编辑");
+        }
 
         item.setTitle(request.getTitle());
         item.setDescription(request.getDescription());
@@ -137,7 +161,7 @@ public class ItemServiceImpl implements ItemService {
         item.setCategoryName(request.getCategoryName());
         item.setPrice(request.getPrice());
         item.setConditionStar(request.getConditionStar());
-        item.setTradeMode(request.getTradeMode());
+        item.setTradeMode(normalizeTradeMode(request.getTradeMode()));
         item.setExpireAt(request.getExpireAt());
         List<String> images = normalizeImages(request.getImages());
         item.setImages(images);
@@ -146,11 +170,13 @@ public class ItemServiceImpl implements ItemService {
         item.setUpdatedAt(new Date());
 
         Item saved = itemRepository.save(item);
+        itemCacheInvalidationService.evictItem(itemId);
         return toDetailResponse(saved, null);
     }
 
     @Override
     public void offShelfItem(String sellerId, String itemId) {
+        userAccessGuard.assertWritable(sellerId);
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new BusinessException("商品不存在"));
 
@@ -167,9 +193,11 @@ public class ItemServiceImpl implements ItemService {
         item.setStatus(STATUS_OFF_SHELF);
         item.setUpdatedAt(new Date());
         itemRepository.save(item);
+        itemCacheInvalidationService.evictItem(itemId);
     }
 
     @Override
+    @Cacheable(cacheNames = "item:search")
     public SearchItemPageResponse searchItems(String q,
                                               String categoryId,
                                               BigDecimal minPrice,
@@ -246,6 +274,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Cacheable(cacheNames = "item:recommend")
     public SearchItemPageResponse recommendItems(Double lat,
                                                  Double lng,
                                                  Integer radiusMeters,
@@ -277,6 +306,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public void addItemComment(String userId, String itemId, String content, Integer rating) {
+        userAccessGuard.assertWritable(userId);
         itemRepository.findById(itemId)
                 .orElseThrow(() -> new BusinessException("商品不存在"));
 
@@ -323,7 +353,7 @@ public class ItemServiceImpl implements ItemService {
         response.setPrice(item.getPrice());
         response.setConditionStar(item.getConditionStar());
         response.setImages(item.getImages());
-        response.setCoverImage(item.getCoverImage());
+        response.setCoverImage(resolveCoverImage(item.getId(), item.getImages(), item.getCoverImage()));
         response.setTradeMode(item.getTradeMode());
         response.setStatus(item.getStatus());
         response.setCreatedAt(item.getCreatedAt());
@@ -340,7 +370,7 @@ public class ItemServiceImpl implements ItemService {
         response.setPrice(item.getPrice());
         response.setConditionStar(item.getConditionStar());
         response.setImages(item.getImages());
-        response.setCoverImage(item.getCoverImage());
+        response.setCoverImage(resolveCoverImage(item.getId(), item.getImages(), item.getCoverImage()));
         response.setStatus(item.getStatus());
         response.setLocation(toLocationDto(item.getLocation()));
         response.setCreatedAt(item.getCreatedAt());
@@ -354,7 +384,7 @@ public class ItemServiceImpl implements ItemService {
         response.setTitle(item.getTitle());
         response.setPrice(item.getPrice());
         response.setConditionStar(item.getConditionStar());
-        response.setCoverImage(resolveCoverImage(item.getImages(), item.getCoverImage()));
+        response.setCoverImage(resolveCoverImage(item.getId(), item.getImages(), item.getCoverImage()));
         response.setHotScore(resolveHotScore(item));
         response.setSeller(buildSearchSellerInfo(item.getSellerId(), sellerCache));
         response.setLocation(toLocationDto(item.getLocation()));
@@ -467,6 +497,21 @@ public class ItemServiceImpl implements ItemService {
         return normalized.toLowerCase(Locale.ROOT);
     }
 
+    private String normalizeTradeMode(String tradeMode) {
+        String normalized = trimToNull(tradeMode);
+        if (normalized == null) {
+            throw new BusinessException("tradeMode不能为空");
+        }
+
+        normalized = normalized.toUpperCase(Locale.ROOT);
+        if (!TRADE_MODE_ONLINE.equals(normalized)
+                && !TRADE_MODE_OFFLINE.equals(normalized)
+                && !TRADE_MODE_BOTH.equals(normalized)) {
+            throw new BusinessException("tradeMode仅支持ONLINE、OFFLINE或BOTH");
+        }
+        return normalized;
+    }
+
     private String trimToNull(String value) {
         if (value == null) {
             return null;
@@ -476,12 +521,22 @@ public class ItemServiceImpl implements ItemService {
     }
 
     private void validateCoordinates(Double lat, Double lng, String fieldName) {
-        if (lat == null || lng == null) {
-            throw new BusinessException(fieldName + "不能为空");
-        }
-        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        if (!isValidCoordinate(lat, lng)) {
+            if (lat == null || lng == null) {
+                throw new BusinessException(fieldName + "不能为空");
+            }
             throw new BusinessException(fieldName + "超出合法范围");
         }
+    }
+
+    private boolean isValidCoordinate(Double lat, Double lng) {
+        if (lat == null || lng == null) {
+            return false;
+        }
+        if (!Double.isFinite(lat) || !Double.isFinite(lng)) {
+            return false;
+        }
+        return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
     }
 
     private ItemDistanceView buildItemDistanceView(Item item,
@@ -494,15 +549,29 @@ public class ItemServiceImpl implements ItemService {
     }
 
     private Double calculateDistanceMeters(Item item, RequestLocation requestLocation) {
-        if (requestLocation == null || item.getLocation() == null
-                || item.getLocation().getLat() == null || item.getLocation().getLng() == null) {
+        if (requestLocation == null) {
             return null;
         }
+
+        Item.Location location = item.getLocation();
+        if (location == null) {
+            log.warn("Skip distance calculation for item {} because location is missing", item.getId());
+            return null;
+        }
+
+        Double itemLat = location.getLat();
+        Double itemLng = location.getLng();
+        if (!isValidCoordinate(itemLat, itemLng)) {
+            log.warn("Skip distance calculation for item {} because coordinates are invalid: lat={}, lng={}",
+                    item.getId(), itemLat, itemLng);
+            return null;
+        }
+
         return DistanceUtil.haversineMeters(
                 requestLocation.lat(),
                 requestLocation.lng(),
-                item.getLocation().getLat(),
-                item.getLocation().getLng()
+                itemLat,
+                itemLng
         );
     }
 
@@ -559,15 +628,50 @@ public class ItemServiceImpl implements ItemService {
         return normalized;
     }
 
-    private String resolveCoverImage(List<String> images) {
-        return resolveCoverImage(images, null);
+    private String resolveCoverImage(List<?> images) {
+        return resolveCoverImage(null, images, null);
     }
 
-    private String resolveCoverImage(List<String> images, String existingCoverImage) {
-        if (images != null && !images.isEmpty()) {
-            return images.get(0);
+    private String resolveCoverImage(String itemId, List<?> images, String existingCoverImage) {
+        String extractedImageUrl = extractImageUrl(itemId, images);
+        if (extractedImageUrl != null) {
+            return extractedImageUrl;
         }
-        return existingCoverImage;
+        return trimToNull(existingCoverImage);
+    }
+
+    private String extractImageUrl(String itemId, List<?> images) {
+        if (images == null || images.isEmpty()) {
+            return null;
+        }
+
+        for (int i = 0; i < images.size(); i++) {
+            Object image = images.get(i);
+            if (image instanceof String imageUrl) {
+                String normalized = trimToNull(imageUrl);
+                if (normalized != null) {
+                    return normalized;
+                }
+                log.warn("Skip blank item image entry for item {} at index {}", itemId, i);
+                continue;
+            }
+            if (image instanceof Map<?, ?> imageMap) {
+                Object url = imageMap.get(IMAGE_URL_FIELD);
+                if (url instanceof String imageUrl) {
+                    String normalized = trimToNull(imageUrl);
+                    if (normalized != null) {
+                        return normalized;
+                    }
+                }
+                log.warn("Skip malformed item image entry for item {} at index {} because url is missing or invalid: image={}",
+                        itemId, i, imageMap);
+                continue;
+            }
+
+            log.warn("Skip malformed item image entry for item {} at index {} because type is unsupported: type={}",
+                    itemId, i, image == null ? null : image.getClass().getName());
+        }
+        return null;
     }
 
     private ItemDetailResponse.SellerInfo buildSellerInfo(String sellerId) {

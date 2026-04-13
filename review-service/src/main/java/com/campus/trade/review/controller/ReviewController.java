@@ -31,7 +31,7 @@ public class ReviewController {
         this.loginUserHelper = loginUserHelper;
     }
 
-    @PostMapping
+    @PostMapping({"", "/"})
     public ApiResponse<CreateReviewResponse> createReview(
             HttpServletRequest request,
             @Valid @RequestBody CreateReviewRequest createReviewRequest) {
@@ -41,7 +41,7 @@ public class ReviewController {
         return ApiResponse.success(new CreateReviewResponse(reviewId));
     }
 
-    @GetMapping("/users/{userId}")
+    @GetMapping({"/users/{userId}", "/users/{userId}/"})
     public ApiResponse<List<ReviewItemResponse>> listUserReviews(
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @PathVariable String userId) {
@@ -50,7 +50,7 @@ public class ReviewController {
         return ApiResponse.success(reviewService.listUserReviews(userId));
     }
 
-    @GetMapping("/trades/{tradeId}/status")
+    @GetMapping({"/trades/{tradeId}/status", "/trades/{tradeId}/status/"})
     public ApiResponse<ReviewStatusResponse> getTradeReviewStatus(
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @PathVariable String tradeId) {

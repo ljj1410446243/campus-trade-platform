@@ -11,6 +11,9 @@ public class TradeListResponse {
     private String buyerId;
     private String sellerId;
     private Double price;
+    private String deliveryMode;
+    private String pickupPointId;
+    private String pickupPointName;
     private String status;
     private String payStatus;
     private String payChannel;
@@ -65,6 +68,30 @@ public class TradeListResponse {
 
     public void setPrice(Double price) {
         this.price = price;
+    }
+
+    public String getDeliveryMode() {
+        return deliveryMode;
+    }
+
+    public void setDeliveryMode(String deliveryMode) {
+        this.deliveryMode = deliveryMode;
+    }
+
+    public String getPickupPointId() {
+        return pickupPointId;
+    }
+
+    public void setPickupPointId(String pickupPointId) {
+        this.pickupPointId = pickupPointId;
+    }
+
+    public String getPickupPointName() {
+        return pickupPointName;
+    }
+
+    public void setPickupPointName(String pickupPointName) {
+        this.pickupPointName = pickupPointName;
     }
 
     public String getStatus() {

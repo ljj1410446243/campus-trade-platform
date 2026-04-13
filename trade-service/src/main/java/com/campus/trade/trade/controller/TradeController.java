@@ -105,8 +105,35 @@ public class TradeController {
         return ApiResponse.success(tradeService.mockPay(buyerId, tradeId));
     }
 
+    @PostMapping({"/{tradeId}/mock-pay-success", "/{tradeId}/mock-pay-success/"})
+    public ApiResponse<TradeDetailResponse> mockPaySuccess(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @PathVariable String tradeId) {
+
+        String buyerId = loginUserHelper.getCurrentUserId(authorizationHeader);
+        return ApiResponse.success(tradeService.mockPaySuccess(buyerId, tradeId));
+    }
+
+    @PostMapping({"/{tradeId}/deliver", "/{tradeId}/deliver/"})
+    public ApiResponse<Void> deliverTrade(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @PathVariable String tradeId) {
+
+        tradeService.deliverTrade(loginUserHelper.getCurrentUserId(authorizationHeader), tradeId);
+        return ApiResponse.success();
+    }
+
     @PostMapping({"/{tradeId}/complete", "/{tradeId}/complete/"})
     public ApiResponse<Void> completeTrade(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @PathVariable String tradeId) {
+
+        tradeService.completeTrade(loginUserHelper.getCurrentUserId(authorizationHeader), tradeId);
+        return ApiResponse.success();
+    }
+
+    @PostMapping({"/{tradeId}/confirm", "/{tradeId}/confirm/"})
+    public ApiResponse<Void> confirmTrade(
             @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable String tradeId) {
 

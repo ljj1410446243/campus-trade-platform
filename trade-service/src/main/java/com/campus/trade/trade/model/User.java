@@ -18,4 +18,6 @@ public class User {
     private String creditLevel;
     private Integer reviewCount;
     private Double averageRating;
+    private String role;
+    private String status;
 }

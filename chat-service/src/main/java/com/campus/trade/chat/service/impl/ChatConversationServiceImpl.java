@@ -11,6 +11,7 @@ import com.campus.trade.chat.repository.ChatConversationRepository;
 import com.campus.trade.chat.repository.ItemRepository;
 import com.campus.trade.chat.repository.UserRepository;
 import com.campus.trade.chat.service.ChatConversationService;
+import com.campus.trade.chat.util.UserAccessGuard;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,7 @@ public class ChatConversationServiceImpl implements ChatConversationService {
   private final ChatConversationRepository chatConversationRepository;
   private final UserRepository userRepository;
   private final ItemRepository itemRepository;
+  private final UserAccessGuard userAccessGuard;
 
   @Override
   public List<ConversationVO> getMyConversations(String currentUserId) {
@@ -36,6 +38,7 @@ public class ChatConversationServiceImpl implements ChatConversationService {
 
   @Override
   public ChatConversation createOrGetConversation(String currentUserId, CreateConversationRequest request) {
+    userAccessGuard.assertWritable(currentUserId);
     String buyerId = currentUserId;
     String sellerId = request.getSellerId();
 
@@ -93,6 +96,7 @@ public class ChatConversationServiceImpl implements ChatConversationService {
 
   @Override
   public void clearUnread(String conversationId, String currentUserId) {
+    userAccessGuard.assertWritable(currentUserId);
     ChatConversation conversation = getById(conversationId);
     validateConversationMember(conversation, currentUserId);
 
