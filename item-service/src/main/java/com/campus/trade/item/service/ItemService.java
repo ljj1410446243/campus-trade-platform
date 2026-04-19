@@ -38,7 +38,8 @@ public interface ItemService {
                                        Integer page,
                                        Integer pageSize);
 
-    SearchItemPageResponse recommendItems(Double lat,
+    SearchItemPageResponse recommendItems(String userId,
+                                          Double lat,
                                           Double lng,
                                           Integer radiusMeters,
                                           String sortBy,

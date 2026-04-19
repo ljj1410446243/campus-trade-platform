@@ -63,16 +63,28 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public AuthTokenResult login(LoginRequest request, ClientContext clientContext) {
     String account = normalize(request.getAccount());
+    String password = normalize(request.getPassword());
+
+    if (account == null || account.isBlank() || password == null || password.isBlank()) {
+      throw new BusinessException(ErrorCode.BAD_REQUEST, HttpStatus.BAD_REQUEST, "账号和密码不能为空");
+    }
 
     User user = userRepository.findByUsername(account)
             .or(() -> userRepository.findByPhone(account))
             .orElseThrow(() ->
                     new BusinessException(ErrorCode.AUTH_ERROR, HttpStatus.UNAUTHORIZED, "账号或密码错误"));
 
-    boolean passwordMatched = passwordEncoder.matches(
-            request.getPassword(),
-            user.getPasswordHash()
-    );
+    String passwordHash = user.getPasswordHash();
+    if (passwordHash == null || passwordHash.isBlank()) {
+      throw new BusinessException(ErrorCode.AUTH_ERROR, HttpStatus.UNAUTHORIZED, "账号或密码错误");
+    }
+
+    boolean passwordMatched;
+    try {
+      passwordMatched = passwordEncoder.matches(password, passwordHash);
+    } catch (IllegalArgumentException e) {
+      throw new BusinessException(ErrorCode.AUTH_ERROR, HttpStatus.UNAUTHORIZED, "账号或密码错误");
+    }
 
     if (!passwordMatched) {
       throw new BusinessException(ErrorCode.AUTH_ERROR, HttpStatus.UNAUTHORIZED, "账号或密码错误");
@@ -145,6 +157,23 @@ public class AuthServiceImpl implements AuthService {
     String username = normalize(request.getUsername());
     String phone = normalize(request.getPhone());
     String nickname = normalize(request.getNickname());
+    String password = normalize(request.getPassword());
+
+    if (username == null || username.isBlank()) {
+      throw new BusinessException(ErrorCode.BAD_REQUEST, HttpStatus.BAD_REQUEST, "用户名不能为空");
+    }
+
+    if (phone == null || phone.isBlank()) {
+      throw new BusinessException(ErrorCode.BAD_REQUEST, HttpStatus.BAD_REQUEST, "手机号不能为空");
+    }
+
+    if (nickname == null || nickname.isBlank()) {
+      throw new BusinessException(ErrorCode.BAD_REQUEST, HttpStatus.BAD_REQUEST, "昵称不能为空");
+    }
+
+    if (password == null || password.isBlank()) {
+      throw new BusinessException(ErrorCode.BAD_REQUEST, HttpStatus.BAD_REQUEST, "密码不能为空");
+    }
 
     boolean usernameExists = userRepository.findByUsername(username).isPresent();
 
@@ -162,7 +191,7 @@ public class AuthServiceImpl implements AuthService {
 
     User user = new User();
     user.setUsername(username);
-    user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+    user.setPasswordHash(passwordEncoder.encode(password));
     user.setPhone(phone);
     user.setNickname(nickname);
     user.setRole("USER");

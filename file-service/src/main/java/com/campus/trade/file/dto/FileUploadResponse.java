@@ -5,6 +5,9 @@ public class FileUploadResponse {
     private String fileId;
     private String bizType;
     private String url;
+    private String originalUrl;
+    private String previewUrl;
+    private String thumbnailUrl;
     private String contentType;
     private Long size;
     private Integer width;
@@ -33,6 +36,30 @@ public class FileUploadResponse {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public String getOriginalUrl() {
+        return originalUrl;
+    }
+
+    public void setOriginalUrl(String originalUrl) {
+        this.originalUrl = originalUrl;
+    }
+
+    public String getPreviewUrl() {
+        return previewUrl;
+    }
+
+    public void setPreviewUrl(String previewUrl) {
+        this.previewUrl = previewUrl;
+    }
+
+    public String getThumbnailUrl() {
+        return thumbnailUrl;
+    }
+
+    public void setThumbnailUrl(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
     }
 
     public String getContentType() {

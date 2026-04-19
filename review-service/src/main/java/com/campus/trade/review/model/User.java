@@ -3,6 +3,10 @@ package com.campus.trade.review.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+/**
+ * users 集合只读视图。
+ * review-service 只能读取公开资料，并通过字段级 update 更新信用分。
+ */
 @Document(collection = "users")
 public class User {
 

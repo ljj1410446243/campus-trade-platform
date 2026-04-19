@@ -6,7 +6,10 @@ import com.campus.trade.item.exception.BusinessException;
 import com.campus.trade.item.service.LocationService;
 import com.campus.trade.item.util.CoordinateTransformUtil;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
@@ -17,10 +20,12 @@ import java.util.Locale;
 @Service
 public class LocationServiceImpl implements LocationService {
 
+    private static final Logger log = LoggerFactory.getLogger(LocationServiceImpl.class);
     private static final String COORD_TYPE_WGS84 = "WGS84";
     private static final String COORD_TYPE_GCJ02 = "GCJ02";
     private static final String SOURCE_DEVICE = "device";
     private static final String SOURCE_SEARCH = "search";
+    private static final long SLOW_REQUEST_MILLIS = 2000L;
 
     private final RestClient restClient;
     private final LocationProperties locationProperties;
@@ -35,6 +40,7 @@ public class LocationServiceImpl implements LocationService {
         validateCoordinates(lat, lng, "定位坐标");
         String normalizedCoordType = normalizeCoordType(coordType, COORD_TYPE_WGS84);
         double[] gcjCoordinates = convertToGcj02(lat, lng, normalizedCoordType);
+        long startTime = System.nanoTime();
 
         try {
             JsonNode body = restClient.get()
@@ -48,11 +54,13 @@ public class LocationServiceImpl implements LocationService {
                             .build())
                     .retrieve()
                     .body(JsonNode.class);
+            logExternalDuration("reverse-geocode", startTime, true, null);
 
             ensureAmapSuccess(body, "逆地理解析");
 
             JsonNode regeocode = body.path("regeocode");
             if (regeocode.isMissingNode() || regeocode.isNull()) {
+                log.warn("Amap reverse-geocode returned empty regeocode payload for lat={}, lng={}", lat, lng);
                 throw new BusinessException(502, "高德逆地理解析返回为空");
             }
 
@@ -64,7 +72,11 @@ public class LocationServiceImpl implements LocationService {
             response.setCoordType(COORD_TYPE_GCJ02);
             response.setSource(SOURCE_DEVICE);
             return response;
+        } catch (ResourceAccessException e) {
+            logExternalDuration("reverse-geocode", startTime, false, e);
+            throw new BusinessException(502, "高德逆地理解析超时或不可用");
         } catch (RestClientException e) {
+            logExternalDuration("reverse-geocode", startTime, false, e);
             throw new BusinessException(502, "高德逆地理解析调用失败");
         }
     }
@@ -89,6 +101,7 @@ public class LocationServiceImpl implements LocationService {
         } else {
             locationValue = null;
         }
+        long startTime = System.nanoTime();
 
         try {
             JsonNode body = restClient.get()
@@ -105,44 +118,40 @@ public class LocationServiceImpl implements LocationService {
                     })
                     .retrieve()
                     .body(JsonNode.class);
+            logExternalDuration("search", startTime, true, null);
 
             ensureAmapSuccess(body, "地点搜索");
 
             List<LocationDTO> locations = new ArrayList<>();
             JsonNode tips = body.path("tips");
             if (!tips.isArray()) {
+                log.warn("Amap search returned non-array tips for query='{}'", q);
                 return locations;
             }
 
             for (JsonNode tip : tips) {
-                String location = readText(tip, "location");
-                if (location == null || location.isBlank() || !location.contains(",")) {
-                    continue;
-                }
-
-                String[] parts = location.split(",");
-                if (parts.length != 2) {
-                    continue;
-                }
-
-                Double tipLng = parseDouble(parts[0]);
-                Double tipLat = parseDouble(parts[1]);
-                if (tipLat == null || tipLng == null) {
+                ParsedCoordinates coordinates = parseCoordinates(readText(tip, "location"));
+                if (coordinates == null) {
+                    logDroppedTip(q, tip, "missing_or_invalid_location");
                     continue;
                 }
 
                 LocationDTO item = new LocationDTO();
-                item.setLat(tipLat);
-                item.setLng(tipLng);
-                item.setPoiName(readText(tip, "name"));
-                item.setAddress(readText(tip, "address"));
+                item.setLat(coordinates.lat());
+                item.setLng(coordinates.lng());
+                item.setPoiName(resolveSearchPoiName(tip));
+                item.setAddress(resolveSearchAddress(tip));
                 item.setCoordType(COORD_TYPE_GCJ02);
                 item.setSource(SOURCE_SEARCH);
                 locations.add(item);
             }
 
             return locations;
+        } catch (ResourceAccessException e) {
+            logExternalDuration("search", startTime, false, e);
+            throw new BusinessException(502, "高德地点搜索超时或不可用");
         } catch (RestClientException e) {
+            logExternalDuration("search", startTime, false, e);
             throw new BusinessException(502, "高德地点搜索调用失败");
         }
     }
@@ -190,6 +199,40 @@ public class LocationServiceImpl implements LocationService {
         return null;
     }
 
+    private String resolveSearchPoiName(JsonNode tip) {
+        String poiName = readText(tip, "name");
+        if (poiName != null) {
+            return poiName;
+        }
+        return resolveSearchAddress(tip);
+    }
+
+    private String resolveSearchAddress(JsonNode tip) {
+        String district = sanitizeAddressComponent(readText(tip, "district"));
+        String address = sanitizeAddressComponent(readText(tip, "address"));
+        if (district != null && address != null) {
+            return district + address;
+        }
+        if (address != null) {
+            return address;
+        }
+        if (district != null) {
+            return district;
+        }
+        return readText(tip, "name");
+    }
+
+    private String sanitizeAddressComponent(String value) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.trim();
+        if (normalized.isEmpty() || "[]".equals(normalized)) {
+            return null;
+        }
+        return normalized;
+    }
+
     private double[] convertToGcj02(Double lat, Double lng, String coordType) {
         if (COORD_TYPE_WGS84.equals(coordType)) {
             return CoordinateTransformUtil.wgs84ToGcj02(lat, lng);
@@ -233,5 +276,55 @@ public class LocationServiceImpl implements LocationService {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    private ParsedCoordinates parseCoordinates(String location) {
+        if (location == null || location.isBlank() || !location.contains(",")) {
+            return null;
+        }
+
+        String[] parts = location.split(",");
+        if (parts.length != 2) {
+            return null;
+        }
+
+        Double tipLng = parseDouble(parts[0]);
+        Double tipLat = parseDouble(parts[1]);
+        if (tipLat == null || tipLng == null) {
+            return null;
+        }
+        return new ParsedCoordinates(tipLat, tipLng);
+    }
+
+    private void logDroppedTip(String query, JsonNode tip, String reason) {
+        log.info("Dropping amap search tip for query='{}', reason={}, name={}, district={}, address={}, location={}",
+                query,
+                reason,
+                readText(tip, "name"),
+                readText(tip, "district"),
+                readText(tip, "address"),
+                readText(tip, "location"));
+    }
+
+    private void logExternalDuration(String action, long startTime, boolean success, Exception error) {
+        long durationMillis = (System.nanoTime() - startTime) / 1_000_000;
+        if (success) {
+            if (durationMillis >= SLOW_REQUEST_MILLIS) {
+                log.warn("Amap {} request was slow: {} ms", action, durationMillis);
+            } else {
+                log.debug("Amap {} request completed in {} ms", action, durationMillis);
+            }
+            return;
+        }
+
+        if (error == null) {
+            log.warn("Amap {} request failed after {} ms", action, durationMillis);
+            return;
+        }
+
+        log.warn("Amap {} request failed after {} ms: {}", action, durationMillis, error.getMessage());
+    }
+
+    private record ParsedCoordinates(double lat, double lng) {
     }
 }

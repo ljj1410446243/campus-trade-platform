@@ -18,8 +18,14 @@ public class FileDocument {
     private String contentType;
     private Long size;
     private String storageType;
+    private String originalStoragePath;
     private String storagePath;
     private String url;
+    private String originalUrl;
+    private String previewStoragePath;
+    private String previewUrl;
+    private String thumbnailStoragePath;
+    private String thumbnailUrl;
     private Integer width;
     private Integer height;
     private String status;
@@ -92,6 +98,14 @@ public class FileDocument {
         this.storageType = storageType;
     }
 
+    public String getOriginalStoragePath() {
+        return originalStoragePath;
+    }
+
+    public void setOriginalStoragePath(String originalStoragePath) {
+        this.originalStoragePath = originalStoragePath;
+    }
+
     public String getStoragePath() {
         return storagePath;
     }
@@ -106,6 +120,46 @@ public class FileDocument {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public String getOriginalUrl() {
+        return originalUrl;
+    }
+
+    public void setOriginalUrl(String originalUrl) {
+        this.originalUrl = originalUrl;
+    }
+
+    public String getPreviewStoragePath() {
+        return previewStoragePath;
+    }
+
+    public void setPreviewStoragePath(String previewStoragePath) {
+        this.previewStoragePath = previewStoragePath;
+    }
+
+    public String getPreviewUrl() {
+        return previewUrl;
+    }
+
+    public void setPreviewUrl(String previewUrl) {
+        this.previewUrl = previewUrl;
+    }
+
+    public String getThumbnailStoragePath() {
+        return thumbnailStoragePath;
+    }
+
+    public void setThumbnailStoragePath(String thumbnailStoragePath) {
+        this.thumbnailStoragePath = thumbnailStoragePath;
+    }
+
+    public String getThumbnailUrl() {
+        return thumbnailUrl;
+    }
+
+    public void setThumbnailUrl(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
     }
 
     public Integer getWidth() {

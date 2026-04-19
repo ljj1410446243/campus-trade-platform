@@ -136,6 +136,7 @@ public class FileServiceImpl implements FileService {
         fileDocument.setContentType(file.getContentType());
         fileDocument.setSize(file.getSize());
         fileDocument.setStorageType(storedFileInfo.getStorageType());
+        fileDocument.setOriginalStoragePath(storedFileInfo.getOriginalStoragePath());
         fileDocument.setStoragePath(storedFileInfo.getStoragePath());
         fileDocument.setWidth(imageMetadata.width());
         fileDocument.setHeight(imageMetadata.height());
@@ -145,6 +146,11 @@ public class FileServiceImpl implements FileService {
 
         FileDocument saved = fileRepository.save(fileDocument);
         saved.setUrl(buildFileUrl(saved.getStoragePath()));
+        saved.setOriginalUrl(saved.getUrl());
+        saved.setPreviewStoragePath(storedFileInfo.getPreviewStoragePath());
+        saved.setPreviewUrl(buildOptionalFileUrl(storedFileInfo.getPreviewStoragePath()));
+        saved.setThumbnailStoragePath(storedFileInfo.getThumbnailStoragePath());
+        saved.setThumbnailUrl(buildOptionalFileUrl(storedFileInfo.getThumbnailStoragePath()));
         saved.setUpdatedAt(new Date());
         return fileRepository.save(saved);
     }
@@ -205,6 +211,13 @@ public class FileServiceImpl implements FileService {
         return normalizedBaseUrl + "/uploads/" + storagePath;
     }
 
+    private String buildOptionalFileUrl(String storagePath) {
+        if (storagePath == null || storagePath.isBlank()) {
+            return null;
+        }
+        return buildFileUrl(storagePath);
+    }
+
     private String buildViewFileName(FileDocument fileDocument) {
         String ext = fileDocument.getExt();
         if (ext == null || ext.isBlank()) {
@@ -218,6 +231,9 @@ public class FileServiceImpl implements FileService {
         response.setFileId(fileDocument.getId());
         response.setBizType(fileDocument.getBizType());
         response.setUrl(fileDocument.getUrl());
+        response.setOriginalUrl(fileDocument.getOriginalUrl());
+        response.setPreviewUrl(fileDocument.getPreviewUrl());
+        response.setThumbnailUrl(fileDocument.getThumbnailUrl());
         response.setContentType(fileDocument.getContentType());
         response.setSize(fileDocument.getSize());
         response.setWidth(fileDocument.getWidth());
@@ -236,8 +252,14 @@ public class FileServiceImpl implements FileService {
         response.setContentType(fileDocument.getContentType());
         response.setSize(fileDocument.getSize());
         response.setStorageType(fileDocument.getStorageType());
+        response.setOriginalStoragePath(fileDocument.getOriginalStoragePath());
         response.setStoragePath(fileDocument.getStoragePath());
         response.setUrl(fileDocument.getUrl());
+        response.setOriginalUrl(fileDocument.getOriginalUrl());
+        response.setPreviewStoragePath(fileDocument.getPreviewStoragePath());
+        response.setPreviewUrl(fileDocument.getPreviewUrl());
+        response.setThumbnailStoragePath(fileDocument.getThumbnailStoragePath());
+        response.setThumbnailUrl(fileDocument.getThumbnailUrl());
         response.setWidth(fileDocument.getWidth());
         response.setHeight(fileDocument.getHeight());
         response.setStatus(fileDocument.getStatus());

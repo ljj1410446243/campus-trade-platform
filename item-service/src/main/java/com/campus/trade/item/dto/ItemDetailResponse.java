@@ -75,6 +75,7 @@ public class ItemDetailResponse {
     public static class StatsInfo {
         private Integer viewCount;
         private Integer favoriteCount;
+        private Integer chatCount;
 
         public Integer getViewCount() {
             return viewCount;
@@ -91,6 +92,14 @@ public class ItemDetailResponse {
         public void setFavoriteCount(Integer favoriteCount) {
             this.favoriteCount = favoriteCount;
         }
+
+        public Integer getChatCount() {
+            return chatCount;
+        }
+
+        public void setChatCount(Integer chatCount) {
+            this.chatCount = chatCount;
+        }
     }
 
     private String itemId;
@@ -102,6 +111,7 @@ public class ItemDetailResponse {
     private BigDecimal price;
     private Integer conditionStar;
     private List<String> images;
+    private List<String> originalImages;
     private String coverImage;
     private String tradeMode;
     private LocationDTO location;
@@ -191,6 +201,14 @@ public class ItemDetailResponse {
 
     public void setCoverImage(String coverImage) {
         this.coverImage = coverImage;
+    }
+
+    public List<String> getOriginalImages() {
+        return originalImages;
+    }
+
+    public void setOriginalImages(List<String> originalImages) {
+        this.originalImages = originalImages;
     }
 
     public String getTradeMode() {

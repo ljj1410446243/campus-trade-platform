@@ -7,12 +7,16 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 全局异常处理器
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+  private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
   /**
    * 处理参数校验异常
@@ -41,6 +45,12 @@ public class GlobalExceptionHandler {
             .body(ApiResponse.error(401, e.getMessage()));
   }
 
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException e) {
+    return ResponseEntity.badRequest()
+            .body(ApiResponse.error(400, "请求参数不合法"));
+  }
+
   @ExceptionHandler(MissingRequestHeaderException.class)
   public ResponseEntity<ApiResponse<Void>> handleMissingRequestHeaderException(MissingRequestHeaderException e) {
     if ("Authorization".equalsIgnoreCase(e.getHeaderName())) {
@@ -55,6 +65,7 @@ public class GlobalExceptionHandler {
    */
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
+    log.error("Unhandled exception in auth-service", e);
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(ApiResponse.error(500, "服务器内部错误"));
   }

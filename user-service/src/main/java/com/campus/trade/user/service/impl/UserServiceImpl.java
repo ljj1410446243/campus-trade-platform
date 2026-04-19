@@ -20,6 +20,7 @@ import com.campus.trade.user.repository.BrowseHistoryRepository;
 import com.campus.trade.user.repository.ItemRepository;
 import com.campus.trade.user.dto.BrowseHistoryItemResponse;
 import com.campus.trade.user.exception.BusinessException;
+import com.campus.trade.user.service.ItemStatsService;
 import com.campus.trade.user.util.UserAccessGuard;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,23 +34,27 @@ public class UserServiceImpl implements UserService {
     private static final int DEFAULT_REVIEW_COUNT = 0;
     private static final double DEFAULT_AVERAGE_RATING = 0D;
     private static final String DEFAULT_CREDIT_LEVEL = "NEW";
+    private static final String STATUS_BANNED = "BANNED";
 
     private final UserRepository userRepository;
     private final FavoriteRepository favoriteRepository;
     private final BrowseHistoryRepository browseHistoryRepository;
     private final ItemRepository itemRepository;
     private final UserAccessGuard userAccessGuard;
+    private final ItemStatsService itemStatsService;
 
     public UserServiceImpl(UserRepository userRepository,
                            FavoriteRepository favoriteRepository,
                            BrowseHistoryRepository browseHistoryRepository,
                            ItemRepository itemRepository,
-                           UserAccessGuard userAccessGuard) {
+                           UserAccessGuard userAccessGuard,
+                           ItemStatsService itemStatsService) {
         this.userRepository = userRepository;
         this.favoriteRepository = favoriteRepository;
         this.browseHistoryRepository = browseHistoryRepository;
         this.itemRepository = itemRepository;
         this.userAccessGuard = userAccessGuard;
+        this.itemStatsService = itemStatsService;
     }
 
     @Override
@@ -75,8 +80,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public void addFavorite(String userId, AddFavoriteRequest request) {
         userAccessGuard.assertWritable(userId);
+        String itemId = requireExistingItem(request.getItemId());
         boolean exists = favoriteRepository
-                .findByUserIdAndItemId(userId, request.getItemId())
+                .findByUserIdAndItemId(userId, itemId)
                 .isPresent();
 
         if (exists) {
@@ -85,10 +91,11 @@ public class UserServiceImpl implements UserService {
 
         Favorite favorite = new Favorite();
         favorite.setUserId(userId);
-        favorite.setItemId(request.getItemId());
+        favorite.setItemId(itemId);
         favorite.setCreatedAt(new Date());
 
         favoriteRepository.save(favorite);
+        itemStatsService.incrementFavoriteCount(itemId);
     }
 
     private UserMeResponse buildUserMeResponse(User user) {
@@ -105,7 +112,11 @@ public class UserServiceImpl implements UserService {
                 resolveCreditLevel(user),
                 resolveReviewCount(user),
                 resolveAverageRating(user),
-                user.getRole()
+                user.getRole(),
+                user.getStatus(),
+                user.getStatus(),
+                STATUS_BANNED.equalsIgnoreCase(user.getStatus()),
+                STATUS_BANNED.equalsIgnoreCase(user.getStatus())
         );
     }
 
@@ -119,6 +130,7 @@ public class UserServiceImpl implements UserService {
         }
 
         favoriteRepository.deleteByUserIdAndItemId(userId, itemId);
+        itemStatsService.decrementFavoriteCount(itemId);
     }
 
     @Override
@@ -133,15 +145,17 @@ public class UserServiceImpl implements UserService {
     @Override
     public void addBrowseHistory(String userId, AddBrowseHistoryRequest request) {
         userAccessGuard.assertWritable(userId);
+        String itemId = requireExistingItem(request.getItemId());
         BrowseHistory history = new BrowseHistory();
         history.setUserId(userId);
-        history.setItemId(request.getItemId());
+        history.setItemId(itemId);
         history.setViewedAt(new Date());
 
         String source = request.getSource();
         history.setSource(source == null || source.isBlank() ? "DIRECT" : source);
 
         browseHistoryRepository.save(history);
+        itemStatsService.incrementViewCount(itemId);
     }
 
     @Override
@@ -184,6 +198,13 @@ public class UserServiceImpl implements UserService {
         Item item = itemRepository.findById(itemId).orElse(null);
         itemCache.put(itemId, item);
         return item;
+    }
+
+    private String requireExistingItem(String itemId) {
+        if (itemId == null || itemId.isBlank() || !itemRepository.existsById(itemId)) {
+            throw new BusinessException("商品不存在");
+        }
+        return itemId;
     }
 
     private Integer resolveCreditScore(User user) {

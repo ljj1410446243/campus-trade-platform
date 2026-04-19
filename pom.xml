@@ -14,6 +14,7 @@
         <module>user-service</module>
         <module>item-service</module>
         <module>trade-service</module>
+        <module>notice-service</module>
         <module>file-service</module>
         <module>chat-service</module>
         <module>review-service</module>

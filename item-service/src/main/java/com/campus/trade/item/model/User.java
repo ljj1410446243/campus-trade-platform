@@ -3,6 +3,10 @@ package com.campus.trade.item.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+/**
+ * users 集合只读视图。
+ * item-service 只能读取卖家公开资料，禁止整文档写回用户。
+ */
 @Document(collection = "users")
 public class User {
 

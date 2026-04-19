@@ -18,6 +18,10 @@ public class UserMeResponse {
   private Integer reviewCount;
   private Double averageRating;
   private String role;
+  private String status;
+  private String accountStatus;
+  private Boolean banned;
+  private Boolean disabled;
 
   public UserMeResponse() {
   }
@@ -25,7 +29,8 @@ public class UserMeResponse {
   public UserMeResponse(String userId, String username, String nickname, String phone,
                         String realName, String studentId, String avatarUrl,
                         Boolean campusVerified, Integer creditScore, String creditLevel,
-                        Integer reviewCount, Double averageRating, String role) {
+                        Integer reviewCount, Double averageRating, String role,
+                        String status, String accountStatus, Boolean banned, Boolean disabled) {
     this.userId = userId;
     this.username = username;
     this.nickname = nickname;
@@ -39,6 +44,10 @@ public class UserMeResponse {
     this.reviewCount = reviewCount;
     this.averageRating = averageRating;
     this.role = role;
+    this.status = status;
+    this.accountStatus = accountStatus;
+    this.banned = banned;
+    this.disabled = disabled;
   }
 
   public String getUserId() {
@@ -143,5 +152,37 @@ public class UserMeResponse {
 
   public void setRole(String role) {
     this.role = role;
+  }
+
+  public String getStatus() {
+    return status;
+  }
+
+  public void setStatus(String status) {
+    this.status = status;
+  }
+
+  public String getAccountStatus() {
+    return accountStatus;
+  }
+
+  public void setAccountStatus(String accountStatus) {
+    this.accountStatus = accountStatus;
+  }
+
+  public Boolean getBanned() {
+    return banned;
+  }
+
+  public void setBanned(Boolean banned) {
+    this.banned = banned;
+  }
+
+  public Boolean getDisabled() {
+    return disabled;
+  }
+
+  public void setDisabled(Boolean disabled) {
+    this.disabled = disabled;
   }
 }

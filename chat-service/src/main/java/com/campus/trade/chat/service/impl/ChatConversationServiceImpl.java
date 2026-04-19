@@ -11,6 +11,7 @@ import com.campus.trade.chat.repository.ChatConversationRepository;
 import com.campus.trade.chat.repository.ItemRepository;
 import com.campus.trade.chat.repository.UserRepository;
 import com.campus.trade.chat.service.ChatConversationService;
+import com.campus.trade.chat.service.ItemStatsService;
 import com.campus.trade.chat.util.UserAccessGuard;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class ChatConversationServiceImpl implements ChatConversationService {
   private final UserRepository userRepository;
   private final ItemRepository itemRepository;
   private final UserAccessGuard userAccessGuard;
+  private final ItemStatsService itemStatsService;
 
   @Override
   public List<ConversationVO> getMyConversations(String currentUserId) {
@@ -40,26 +42,41 @@ public class ChatConversationServiceImpl implements ChatConversationService {
   public ChatConversation createOrGetConversation(String currentUserId, CreateConversationRequest request) {
     userAccessGuard.assertWritable(currentUserId);
     String buyerId = currentUserId;
-    String sellerId = request.getSellerId();
+    Item item = itemRepository.findById(request.getItemId())
+            .orElseThrow(() -> new BaseException(404, "商品不存在"));
+    String sellerId = item.getSellerId();
+
+    if (sellerId == null || sellerId.isBlank()) {
+      throw new BaseException(400, "商品卖家信息缺失");
+    }
+    if (!sellerId.equals(request.getSellerId())) {
+      throw new BaseException(400, "卖家信息不匹配");
+    }
 
     if (buyerId.equals(sellerId)) {
       throw new BaseException(400, "不能和自己创建会话");
     }
 
-    return chatConversationRepository
-            .findByItemIdAndBuyerIdAndSellerId(request.getItemId(), buyerId, sellerId)
-            .orElseGet(() -> {
-              ChatConversation conversation = new ChatConversation();
-              conversation.setItemId(request.getItemId());
-              conversation.setBuyerId(buyerId);
-              conversation.setSellerId(sellerId);
-              conversation.setLastMessage("");
-              conversation.setBuyerUnread(0);
-              conversation.setSellerUnread(0);
-              conversation.setCreatedAt(LocalDateTime.now());
-              conversation.setUpdatedAt(LocalDateTime.now());
-              return chatConversationRepository.save(conversation);
-            });
+    Optional<ChatConversation> existingConversation = chatConversationRepository
+            .findByItemIdAndBuyerIdAndSellerId(request.getItemId(), buyerId, sellerId);
+
+    if (existingConversation.isPresent()) {
+      return existingConversation.get();
+    }
+
+    ChatConversation conversation = new ChatConversation();
+    conversation.setItemId(request.getItemId());
+    conversation.setBuyerId(buyerId);
+    conversation.setSellerId(sellerId);
+    conversation.setLastMessage("");
+    conversation.setBuyerUnread(0);
+    conversation.setSellerUnread(0);
+    conversation.setCreatedAt(LocalDateTime.now());
+    conversation.setUpdatedAt(LocalDateTime.now());
+
+    ChatConversation savedConversation = chatConversationRepository.save(conversation);
+    itemStatsService.incrementChatCount(request.getItemId());
+    return savedConversation;
   }
 
   @Override

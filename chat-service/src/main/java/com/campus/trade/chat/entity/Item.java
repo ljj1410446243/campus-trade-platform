@@ -15,5 +15,7 @@ public class Item {
 
     private String title;
 
+    private String sellerId;
+
     private BigDecimal price;
 }

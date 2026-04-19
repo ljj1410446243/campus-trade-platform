@@ -5,6 +5,10 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
+/**
+ * users 集合只读视图。
+ * trade-service 只能读取交易相关的公开资料，禁止整文档写回用户。
+ */
 @Document(collection = "users")
 public class User {
 

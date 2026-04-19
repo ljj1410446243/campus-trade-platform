@@ -39,6 +39,7 @@ services:
     environment:
       <<: *common-env
       SERVER_PORT: ${USER_SERVER_PORT:-8082}
+      NOTICE_SERVICE_BASE_URL: ${NOTICE_SERVICE_BASE_URL:-http://notice-service:8088}
     expose:
       - "${USER_SERVER_PORT:-8082}"
 
@@ -65,6 +66,17 @@ services:
       SERVER_PORT: ${TRADE_SERVER_PORT:-8084}
     expose:
       - "${TRADE_SERVER_PORT:-8084}"
+
+  notice-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: notice-service/Dockerfile
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${NOTICE_SERVER_PORT:-8088}
+    expose:
+      - "${NOTICE_SERVER_PORT:-8088}"
 
   chat-service:
     <<: *service-common

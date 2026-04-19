@@ -113,6 +113,7 @@ public class ItemController {
 
     @GetMapping({"/recommend/items", "/recommend/items/"})
     public ApiResponse<SearchItemPageResponse> recommendItems(
+            @RequestHeader("Authorization") String authorizationHeader,
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lng,
             @RequestParam(required = false) Integer radiusMeters,
@@ -120,7 +121,8 @@ public class ItemController {
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer pageSize) {
 
-        return ApiResponse.success(itemService.recommendItems(lat, lng, radiusMeters, sortBy, page, pageSize));
+        String userId = loginUserHelper.getCurrentUserId(authorizationHeader);
+        return ApiResponse.success(itemService.recommendItems(userId, lat, lng, radiusMeters, sortBy, page, pageSize));
     }
 
     @PostMapping({"/items/{itemId}/comments", "/items/{itemId}/comments/"})
