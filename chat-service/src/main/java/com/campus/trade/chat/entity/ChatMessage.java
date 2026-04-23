@@ -1,5 +1,6 @@
 package com.campus.trade.chat.entity;
 
+import com.campus.trade.chat.dto.MessagePayload;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -24,7 +25,7 @@ public class ChatMessage {
   private String senderId;
 
   /**
-   * 消息类型：TEXT / IMAGE
+   * 消息类型：TEXT / IMAGE / EMOJI / BARGAIN
    */
   private String type;
 
@@ -32,6 +33,12 @@ public class ChatMessage {
    * 消息内容
    */
   private String content;
+
+  private MessagePayload.ImagePayload image;
+
+  private MessagePayload.EmojiPayload emoji;
+
+  private MessagePayload.BargainPayload bargain;
 
   /**
    * 会话内递增序号

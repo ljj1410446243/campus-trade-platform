@@ -26,4 +26,11 @@ public class LoginUserHelper {
         }
         return jwtUtil.getUserId(token);
     }
+
+    public String getCurrentUserIdIfPresent(String authorizationHeader) {
+        if (authorizationHeader == null || authorizationHeader.isBlank()) {
+            return null;
+        }
+        return getCurrentUserId(authorizationHeader);
+    }
 }

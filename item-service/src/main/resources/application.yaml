@@ -22,6 +22,55 @@ app:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173}
   item-stats:
     reconcile-on-startup: ${APP_ITEM_STATS_RECONCILE_ON_STARTUP:false}
+  recommend:
+    behavior:
+      browse-weight: ${APP_RECOMMEND_BEHAVIOR_BROWSE_WEIGHT:1}
+      favorite-weight: ${APP_RECOMMEND_BEHAVIOR_FAVORITE_WEIGHT:3}
+      chat-weight: ${APP_RECOMMEND_BEHAVIOR_CHAT_WEIGHT:4}
+      trade-weight: ${APP_RECOMMEND_BEHAVIOR_TRADE_WEIGHT:6}
+      positive-review-bonus: ${APP_RECOMMEND_BEHAVIOR_POSITIVE_REVIEW_BONUS:2}
+      browse-strong-threshold: ${APP_RECOMMEND_BEHAVIOR_BROWSE_STRONG_THRESHOLD:2}
+      cold-start-threshold: ${APP_RECOMMEND_BEHAVIOR_COLD_START_THRESHOLD:3}
+      recent-behavior-days: ${APP_RECOMMEND_BEHAVIOR_RECENT_DAYS:90}
+      transaction-window-days: ${APP_RECOMMEND_BEHAVIOR_TRANSACTION_WINDOW_DAYS:7}
+      positive-review-threshold: ${APP_RECOMMEND_BEHAVIOR_POSITIVE_REVIEW_THRESHOLD:4}
+      half-life-days: ${APP_RECOMMEND_BEHAVIOR_HALF_LIFE_DAYS:30}
+    candidate:
+      pool-size: ${APP_RECOMMEND_CANDIDATE_POOL_SIZE:200}
+      query-limit: ${APP_RECOMMEND_CANDIDATE_QUERY_LIMIT:60}
+      hot-fallback-count: ${APP_RECOMMEND_CANDIDATE_HOT_FALLBACK_COUNT:40}
+      exclude-recent-browse-count: ${APP_RECOMMEND_CANDIDATE_EXCLUDE_RECENT_BROWSE_COUNT:20}
+      min-result-count: ${APP_RECOMMEND_CANDIDATE_MIN_RESULT_COUNT:6}
+      allow-repeat-exposure-fallback: ${APP_RECOMMEND_CANDIDATE_ALLOW_REPEAT_EXPOSURE_FALLBACK:true}
+    similar-user:
+      top-k: ${APP_RECOMMEND_SIMILAR_USER_TOP_K:10}
+      max-behavior-items-per-user: ${APP_RECOMMEND_SIMILAR_USER_MAX_BEHAVIOR_ITEMS:30}
+    rule:
+      min-support: ${APP_RECOMMEND_RULE_MIN_SUPPORT:0.02}
+      min-confidence: ${APP_RECOMMEND_RULE_MIN_CONFIDENCE:0.15}
+      min-lift: ${APP_RECOMMEND_RULE_MIN_LIFT:1.05}
+      max-antecedent-items: ${APP_RECOMMEND_RULE_MAX_ANTECEDENT_ITEMS:3}
+      max-rules-per-seed: ${APP_RECOMMEND_RULE_MAX_RULES_PER_SEED:30}
+    weight:
+      profile: ${APP_RECOMMEND_WEIGHT_PROFILE:0.35}
+      behavior-similarity: ${APP_RECOMMEND_WEIGHT_BEHAVIOR_SIMILARITY:0.25}
+      association: ${APP_RECOMMEND_WEIGHT_ASSOCIATION:0.20}
+      hotness: ${APP_RECOMMEND_WEIGHT_HOTNESS:0.10}
+      freshness: ${APP_RECOMMEND_WEIGHT_FRESHNESS:0.05}
+      distance: ${APP_RECOMMEND_WEIGHT_DISTANCE:0.05}
+    cache:
+      user-ttl: ${APP_RECOMMEND_CACHE_USER_TTL:5m}
+      similar-ttl: ${APP_RECOMMEND_CACHE_SIMILAR_TTL:5m}
+      request-ttl: ${APP_RECOMMEND_CACHE_REQUEST_TTL:6h}
+      hot-ttl: ${APP_RECOMMEND_CACHE_HOT_TTL:3h}
+    schedule:
+      rebuild-profiles-on-startup: ${APP_RECOMMEND_REBUILD_PROFILES_ON_STARTUP:false}
+      rebuild-rules-on-startup: ${APP_RECOMMEND_REBUILD_RULES_ON_STARTUP:false}
+      rebuild-hot-on-startup: ${APP_RECOMMEND_REBUILD_HOT_ON_STARTUP:false}
+      profile-refresh-interval: ${APP_RECOMMEND_PROFILE_REFRESH_INTERVAL:6h}
+      rule-refresh-interval: ${APP_RECOMMEND_RULE_REFRESH_INTERVAL:12h}
+      hot-refresh-interval: ${APP_RECOMMEND_HOT_REFRESH_INTERVAL:2h}
+    cold-start-category-keywords: ${APP_RECOMMEND_COLD_START_CATEGORY_KEYWORDS:教材,电子产品,生活用品}
   location:
     request-timeout: 3s
     amap:

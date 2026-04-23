@@ -1,5 +1,6 @@
 package com.campus.trade.item.dto;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -7,6 +8,7 @@ import java.util.List;
  */
 public class SearchItemPageResponse {
 
+    private String requestId;
     private List<SearchItemResponse> list;
     private long total;
 
@@ -14,8 +16,22 @@ public class SearchItemPageResponse {
     }
 
     public SearchItemPageResponse(List<SearchItemResponse> list, long total) {
-        this.list = list;
+        this.list = list == null ? new ArrayList<>() : new ArrayList<>(list);
         this.total = total;
+    }
+
+    public SearchItemPageResponse(String requestId, List<SearchItemResponse> list, long total) {
+        this.requestId = requestId;
+        this.list = list == null ? new ArrayList<>() : new ArrayList<>(list);
+        this.total = total;
+    }
+
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
     }
 
     public List<SearchItemResponse> getList() {
@@ -23,7 +39,7 @@ public class SearchItemPageResponse {
     }
 
     public void setList(List<SearchItemResponse> list) {
-        this.list = list;
+        this.list = list == null ? new ArrayList<>() : new ArrayList<>(list);
     }
 
     public long getTotal() {

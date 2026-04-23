@@ -4,6 +4,7 @@ import com.campus.trade.item.dto.CreateItemRequest;
 import com.campus.trade.item.dto.ItemCommentResponse;
 import com.campus.trade.item.dto.ItemDetailResponse;
 import com.campus.trade.item.dto.ItemListResponse;
+import com.campus.trade.item.dto.RecommendationFeedbackRequest;
 import com.campus.trade.item.dto.SearchItemPageResponse;
 import com.campus.trade.item.dto.UpdateItemRequest;
 
@@ -44,7 +45,19 @@ public interface ItemService {
                                           Integer radiusMeters,
                                           String sortBy,
                                           Integer page,
-                                          Integer pageSize);
+                                          Integer pageSize,
+                                          Boolean debug);
+
+    SearchItemPageResponse similarItems(String userId,
+                                        String itemId,
+                                        Double lat,
+                                        Double lng,
+                                        Integer radiusMeters,
+                                        Integer page,
+                                        Integer pageSize,
+                                        Boolean debug);
+
+    void recordRecommendationFeedback(String userId, RecommendationFeedbackRequest request);
 
     void addItemComment(String userId, String itemId, String content, Integer rating);
 

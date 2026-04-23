@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 public class WsResponse {
 
     /**
-     * ACK / ERROR / TEXT
+     * ACK / ERROR / MESSAGE
      */
     private String type;
 
@@ -32,8 +32,8 @@ public class WsResponse {
         return new WsResponse("ERROR", requestId, new ErrorBody(message));
     }
 
-    public static WsResponse text(Object data) {
-        return new WsResponse("TEXT", null, data);
+    public static WsResponse message(Object data) {
+        return new WsResponse("MESSAGE", null, data);
     }
 
     @Data

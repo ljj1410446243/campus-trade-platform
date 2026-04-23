@@ -12,6 +12,9 @@ public class SendMessageRequest {
     @NotBlank(message = "消息类型不能为空")
     private String type;
 
-    @NotBlank(message = "消息内容不能为空")
     private String content;
+
+    private MessagePayload.ImagePayload image;
+
+    private MessagePayload.EmojiPayload emoji;
 }

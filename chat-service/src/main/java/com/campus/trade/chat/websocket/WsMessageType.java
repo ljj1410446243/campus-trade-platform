@@ -7,7 +7,10 @@ public class WsMessageType {
 
     public static final String AUTH = "AUTH";
     public static final String TEXT = "TEXT";
+    public static final String IMAGE = "IMAGE";
+    public static final String EMOJI = "EMOJI";
     public static final String READ = "READ";
+    public static final String MESSAGE = "MESSAGE";
     public static final String ACK = "ACK";
     public static final String ERROR = "ERROR";
 }

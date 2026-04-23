@@ -17,6 +17,12 @@ public class MessageVO {
 
   private String content;
 
+  private MessagePayload.ImagePayload image;
+
+  private MessagePayload.EmojiPayload emoji;
+
+  private MessagePayload.BargainPayload bargain;
+
   private Long seq;
 
   private LocalDateTime createdAt;

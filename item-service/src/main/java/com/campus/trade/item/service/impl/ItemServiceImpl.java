@@ -5,6 +5,7 @@ import com.campus.trade.item.dto.ItemCommentResponse;
 import com.campus.trade.item.dto.ItemDetailResponse;
 import com.campus.trade.item.dto.ItemListResponse;
 import com.campus.trade.item.dto.LocationDTO;
+import com.campus.trade.item.dto.RecommendationFeedbackRequest;
 import com.campus.trade.item.dto.SearchItemPageResponse;
 import com.campus.trade.item.dto.SearchItemResponse;
 import com.campus.trade.item.dto.UpdateItemRequest;
@@ -26,6 +27,7 @@ import com.campus.trade.item.service.ItemService;
 import com.campus.trade.item.util.CoordinateTransformUtil;
 import com.campus.trade.item.util.DistanceUtil;
 import com.campus.trade.item.util.UserAccessGuard;
+import com.campus.trade.item.service.RecommendationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
@@ -97,6 +99,7 @@ public class ItemServiceImpl implements ItemService {
     private final MongoTemplate mongoTemplate;
     private final UserAccessGuard userAccessGuard;
     private final ItemCacheInvalidationService itemCacheInvalidationService;
+    private final RecommendationService recommendationService;
 
     public ItemServiceImpl(ItemRepository itemRepository,
                            ItemCommentRepository itemCommentRepository,
@@ -106,7 +109,8 @@ public class ItemServiceImpl implements ItemService {
                            BrowseHistoryRepository browseHistoryRepository,
                            MongoTemplate mongoTemplate,
                            UserAccessGuard userAccessGuard,
-                           ItemCacheInvalidationService itemCacheInvalidationService) {
+                           ItemCacheInvalidationService itemCacheInvalidationService,
+                           RecommendationService recommendationService) {
         this.itemRepository = itemRepository;
         this.itemCommentRepository = itemCommentRepository;
         this.userRepository = userRepository;
@@ -116,6 +120,7 @@ public class ItemServiceImpl implements ItemService {
         this.mongoTemplate = mongoTemplate;
         this.userAccessGuard = userAccessGuard;
         this.itemCacheInvalidationService = itemCacheInvalidationService;
+        this.recommendationService = recommendationService;
     }
 
     @Override
@@ -239,7 +244,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    @Cacheable(cacheNames = "item:search")
+    @Cacheable(cacheNames = "item:search:v3")
     public SearchItemPageResponse searchItems(String q,
                                               String categoryId,
                                               BigDecimal minPrice,
@@ -318,39 +323,34 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    @Cacheable(cacheNames = "item:recommend")
     public SearchItemPageResponse recommendItems(String userId,
                                                  Double lat,
                                                  Double lng,
                                                  Integer radiusMeters,
                                                  String sortBy,
                                                  Integer page,
-                                                 Integer pageSize) {
-        int safePage = (page == null || page < 1) ? 1 : page;
-        int safePageSize = (pageSize == null || pageSize < 1) ? 10 : pageSize;
+                                                 Integer pageSize,
+                                                 Boolean debug) {
         userAccessGuard.requireUser(userId);
+        return recommendationService.recommendItems(userId, lat, lng, radiusMeters, sortBy, page, pageSize, debug);
+    }
 
-        Query query = new Query();
-        query.addCriteria(Criteria.where("status").is(STATUS_ON_SALE));
+    @Override
+    public SearchItemPageResponse similarItems(String userId,
+                                               String itemId,
+                                               Double lat,
+                                               Double lng,
+                                               Integer radiusMeters,
+                                               Integer page,
+                                               Integer pageSize,
+                                               Boolean debug) {
+        return recommendationService.similarItems(userId, itemId, lat, lng, radiusMeters, page, pageSize, debug);
+    }
 
-        RequestLocation requestLocation = normalizeRequestLocation(lat, lng);
-        RecommendContext recommendContext = buildRecommendContext(userId);
-        Map<String, User> sellerCache = new HashMap<>();
-        List<ItemDistanceView> processedItems = mongoTemplate.find(query, Item.class).stream()
-                .filter(this::isRecommendable)
-                .map(item -> buildItemDistanceView(item, requestLocation, sellerCache, recommendContext))
-                .sorted(buildRecommendComparator(sortBy, requestLocation, recommendContext, radiusMeters))
-                .toList();
-
-        int fromIndex = Math.min((safePage - 1) * safePageSize, processedItems.size());
-        int toIndex = Math.min(fromIndex + safePageSize, processedItems.size());
-        List<ItemDistanceView> pagedViews = processedItems.subList(fromIndex, toIndex);
-        Map<String, FileDocument> fileDocumentMap = buildFileDocumentMap(collectCoverUrlsFromViews(pagedViews));
-        List<SearchItemResponse> list = pagedViews.stream()
-                .map(view -> toSearchResponse(view, sellerCache, fileDocumentMap))
-                .toList();
-
-        return new SearchItemPageResponse(list, processedItems.size());
+    @Override
+    public void recordRecommendationFeedback(String userId, RecommendationFeedbackRequest request) {
+        userAccessGuard.assertWritable(userId);
+        recommendationService.recordFeedback(userId, request);
     }
 
     @Override

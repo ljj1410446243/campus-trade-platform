@@ -12,6 +12,9 @@ public class SendMessageVO {
     private String senderId;
     private String type;
     private String content;
+    private MessagePayload.ImagePayload image;
+    private MessagePayload.EmojiPayload emoji;
+    private MessagePayload.BargainPayload bargain;
     private Long seq;
     private LocalDateTime createdAt;
 }

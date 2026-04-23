@@ -1,11 +1,78 @@
 package com.campus.trade.item.dto;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * 搜索结果列表项
  */
 public class SearchItemResponse {
+
+    public static class DebugScores {
+        private Double profileScore;
+        private Double behaviorSimilarityScore;
+        private Double associationScore;
+        private Double hotnessScore;
+        private Double freshnessScore;
+        private Double distanceScore;
+        private Double totalScore;
+
+        public Double getProfileScore() {
+            return profileScore;
+        }
+
+        public void setProfileScore(Double profileScore) {
+            this.profileScore = profileScore;
+        }
+
+        public Double getBehaviorSimilarityScore() {
+            return behaviorSimilarityScore;
+        }
+
+        public void setBehaviorSimilarityScore(Double behaviorSimilarityScore) {
+            this.behaviorSimilarityScore = behaviorSimilarityScore;
+        }
+
+        public Double getAssociationScore() {
+            return associationScore;
+        }
+
+        public void setAssociationScore(Double associationScore) {
+            this.associationScore = associationScore;
+        }
+
+        public Double getHotnessScore() {
+            return hotnessScore;
+        }
+
+        public void setHotnessScore(Double hotnessScore) {
+            this.hotnessScore = hotnessScore;
+        }
+
+        public Double getFreshnessScore() {
+            return freshnessScore;
+        }
+
+        public void setFreshnessScore(Double freshnessScore) {
+            this.freshnessScore = freshnessScore;
+        }
+
+        public Double getDistanceScore() {
+            return distanceScore;
+        }
+
+        public void setDistanceScore(Double distanceScore) {
+            this.distanceScore = distanceScore;
+        }
+
+        public Double getTotalScore() {
+            return totalScore;
+        }
+
+        public void setTotalScore(Double totalScore) {
+            this.totalScore = totalScore;
+        }
+    }
 
     public static class SellerInfo {
         private String userId;
@@ -82,6 +149,9 @@ public class SearchItemResponse {
     private LocationDTO location;
     private Double distanceMeters;
     private SellerInfo seller;
+    private String recommendReason;
+    private List<String> sourceChannels;
+    private DebugScores debugScores;
 
     public String getItemId() {
         return itemId;
@@ -153,5 +223,29 @@ public class SearchItemResponse {
 
     public void setSeller(SellerInfo seller) {
         this.seller = seller;
+    }
+
+    public String getRecommendReason() {
+        return recommendReason;
+    }
+
+    public void setRecommendReason(String recommendReason) {
+        this.recommendReason = recommendReason;
+    }
+
+    public List<String> getSourceChannels() {
+        return sourceChannels;
+    }
+
+    public void setSourceChannels(List<String> sourceChannels) {
+        this.sourceChannels = sourceChannels;
+    }
+
+    public DebugScores getDebugScores() {
+        return debugScores;
+    }
+
+    public void setDebugScores(DebugScores debugScores) {
+        this.debugScores = debugScores;
     }
 }

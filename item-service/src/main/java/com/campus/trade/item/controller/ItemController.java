@@ -6,6 +6,7 @@ import com.campus.trade.item.dto.CreateItemRequest;
 import com.campus.trade.item.dto.ItemCommentResponse;
 import com.campus.trade.item.dto.ItemDetailResponse;
 import com.campus.trade.item.dto.ItemListResponse;
+import com.campus.trade.item.dto.RecommendationFeedbackRequest;
 import com.campus.trade.item.dto.SearchItemPageResponse;
 import com.campus.trade.item.dto.UpdateItemRequest;
 import com.campus.trade.item.service.ItemService;
@@ -85,7 +86,7 @@ public class ItemController {
         return ApiResponse.success(itemService.listMyItems(loginUserHelper.getCurrentUserId(authorizationHeader)));
     }
 
-    @GetMapping({"/search/items", "/search/items/"})
+    @GetMapping({"/search/items", "/search/items/", "/items/search", "/items/search/"})
     public ApiResponse<SearchItemPageResponse> searchItems(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String categoryId,
@@ -119,10 +120,36 @@ public class ItemController {
             @RequestParam(required = false) Integer radiusMeters,
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer pageSize) {
+            @RequestParam(required = false) Integer pageSize,
+            @RequestParam(required = false) Boolean debug) {
 
         String userId = loginUserHelper.getCurrentUserId(authorizationHeader);
-        return ApiResponse.success(itemService.recommendItems(userId, lat, lng, radiusMeters, sortBy, page, pageSize));
+        return ApiResponse.success(itemService.recommendItems(userId, lat, lng, radiusMeters, sortBy, page, pageSize, debug));
+    }
+
+    @GetMapping({"/items/{itemId}/similar", "/items/{itemId}/similar/"})
+    public ApiResponse<SearchItemPageResponse> similarItems(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @PathVariable String itemId,
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng,
+            @RequestParam(required = false) Integer radiusMeters,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer pageSize,
+            @RequestParam(required = false) Boolean debug) {
+
+        String userId = loginUserHelper.getCurrentUserIdIfPresent(authorizationHeader);
+        return ApiResponse.success(itemService.similarItems(userId, itemId, lat, lng, radiusMeters, page, pageSize, debug));
+    }
+
+    @PostMapping({"/recommend/feedback", "/recommend/feedback/"})
+    public ApiResponse<Void> recordRecommendationFeedback(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @Valid @RequestBody RecommendationFeedbackRequest request) {
+
+        String userId = loginUserHelper.getCurrentUserId(authorizationHeader);
+        itemService.recordRecommendationFeedback(userId, request);
+        return ApiResponse.success();
     }
 
     @PostMapping({"/items/{itemId}/comments", "/items/{itemId}/comments/"})
